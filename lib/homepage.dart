@@ -117,6 +117,11 @@ class _HomePageState extends State<HomePage> {
                             final isSelected = _selectedDay.year == date.year &&
                                 _selectedDay.month == date.month &&
                                 _selectedDay.day == date.day;
+                            final isToday = date.year == DateTime.now().year &&
+                                date.month == DateTime.now().month &&
+                                date.day ==
+                                    DateTime.now()
+                                        .day; // Check if the date is today
 
                             return GestureDetector(
                               onTap: () => setState(() => _selectedDay = date),
@@ -124,8 +129,11 @@ class _HomePageState extends State<HomePage> {
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
                                   color: isSelected
-                                      ? Color(0xFF4CAF50)
-                                      : Colors.white,
+                                      ? Color(0xFF4CAF50) // Selected date color
+                                      : isToday
+                                          ? const Color.fromARGB(255, 204, 204,
+                                              204) // Current date color
+                                          : Colors.white, // Other dates color
                                   boxShadow: [
                                     BoxShadow(
                                       color: Colors.black.withOpacity(0.05),
