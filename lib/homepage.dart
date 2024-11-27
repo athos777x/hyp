@@ -69,9 +69,6 @@ class _HomePageState extends State<HomePage> {
                 controller: _scrollController,
                 itemBuilder: (context, index) {
                   // Calculate the month to display based on the index
-                  final displayMonth = DateTime(2024, 1).add(
-                      Duration(days: 30 * index)); // Start from January 2024
-                  // Adjust the calculation to ensure it doesn't exceed December 2026
                   final monthOffset = index % 12; // Get the month offset
                   final yearOffset = index ~/ 12; // Get the year offset
                   final adjustedMonth =
