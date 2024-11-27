@@ -193,7 +193,7 @@ class _HomePageState extends State<HomePage> {
                       }
                     },
                     child: Container(
-                      width: 25, // Width of the horizontal line
+                      width: 28, // Width of the horizontal line
                       height: 6, // Height of the horizontal line
                       decoration: BoxDecoration(
                         color: const Color.fromARGB(
@@ -208,6 +208,7 @@ class _HomePageState extends State<HomePage> {
                     duration: Duration(
                         milliseconds: 800), // Duration of the animation
                     height: _containerHeight, // Use a variable for height
+                    color: Colors.white, // Set the color to white
                     curve: Curves.easeInOut, // Animation curve
                     child: Stack(
                       // Use Stack to position elements
@@ -219,22 +220,29 @@ class _HomePageState extends State<HomePage> {
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(
-                                  _getDateStatus(), // Displays "Today"
-                                  style: TextStyle(
-                                    color: Colors.grey[600],
-                                    fontSize: 14, // Adjusted font size
-                                    fontWeight:
-                                        FontWeight.bold, // Adjusted font weight
+                                Padding(
+                                  padding: const EdgeInsets.only(
+                                      left: 8.0, top: 8.0),
+                                  child: Text(
+                                    _getDateStatus(), // Displays "Today"
+                                    style: TextStyle(
+                                      color: Colors.grey[600],
+                                      fontSize: 14, // Adjusted font size
+                                      fontWeight: FontWeight
+                                          .bold, // Adjusted font weight
+                                    ),
                                   ),
                                 ),
-                                Text(
-                                  '${_getDayName(_selectedDay)}, ${_getMonthName(_selectedDay)} ${_selectedDay.day}', // Displays "Friday, November 1"
-                                  style: TextStyle(
-                                    color: Colors.black87,
-                                    fontSize: 16, // Adjusted font size
-                                    fontWeight:
-                                        FontWeight.w600, // Adjusted font weight
+                                Padding(
+                                  padding: const EdgeInsets.only(left: 8.0),
+                                  child: Text(
+                                    '${_getDayName(_selectedDay)}, ${_getMonthName(_selectedDay)} ${_selectedDay.day}', // Displays "Friday, November 1"
+                                    style: TextStyle(
+                                      color: Colors.black87,
+                                      fontSize: 16, // Adjusted font size
+                                      fontWeight: FontWeight
+                                          .w600, // Adjusted font weight
+                                    ),
                                   ),
                                 ),
                               ],
