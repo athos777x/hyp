@@ -15,7 +15,7 @@ class _HomePageState extends State<HomePage> {
       375.0; // Set an estimated height for each month item
   late ScrollController _scrollController;
   int _selectedIndex = 0; // Track the selected index
-  double _containerHeight = 690.0; // Set a default height for the container
+  double _containerHeight = 708.0; // Set a default height for the container
 
   @override
   void initState() {
@@ -203,7 +203,7 @@ class _HomePageState extends State<HomePage> {
                                     setState(() {
                                       // Expand the height back to the original value
                                       _containerHeight =
-                                          690.0; // Set to original height
+                                          708.0; // Set to original height
                                     });
                                   }
                                 },
