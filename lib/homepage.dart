@@ -15,7 +15,7 @@ class _HomePageState extends State<HomePage> {
       375.0; // Set an estimated height for each month item
   late ScrollController _scrollController;
   int _selectedIndex = 0; // Track the selected index
-  double _containerHeight = 698.0; // Set a default height for the container
+  double _containerHeight = 690.0; // Set a default height for the container
 
   @override
   void initState() {
@@ -188,29 +188,27 @@ class _HomePageState extends State<HomePage> {
                         // Swipe up
                         setState(() {
                           // Expand the height back to the original value
-                          _containerHeight = 698.0; // Set to original height
+                          _containerHeight = 690.0; // Set to original height
                         });
                       }
                     },
-                    child: Column(
-                      children: [
-                        // Swipe arrow indicator
-                        Icon(
-                          _containerHeight ==
-                                  0.0 // Check if the container is collapsed
-                              ? Icons
-                                  .arrow_upward // Show up arrow when collapsed
-                              : Icons
-                                  .arrow_downward, // Show down arrow when expanded
-                          color: Colors.grey[600],
-                          size: 20,
-                        ),
-                      ],
+                    child: Container(
+                      width: 25, // Width of the horizontal line
+                      height: 6, // Height of the horizontal line
+                      decoration: BoxDecoration(
+                        color: const Color.fromARGB(
+                            255, 199, 199, 199), // Color of the line
+                        borderRadius:
+                            BorderRadius.circular(10), // Rounded edges
+                      ),
                     ),
                   ),
-                  // Container for Today text and add button
-                  Container(
+                  // Animated Container for Today text and add button
+                  AnimatedContainer(
+                    duration: Duration(
+                        milliseconds: 800), // Duration of the animation
                     height: _containerHeight, // Use a variable for height
+                    curve: Curves.easeInOut, // Animation curve
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment
                           .spaceBetween, // Distribute space between children
