@@ -169,8 +169,7 @@ class _HomePageState extends State<HomePage> {
 
             // Today text and add button
             Padding(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+              padding: EdgeInsets.zero,
               child: Column(
                 children: [
                   // Indicator for swipe action
@@ -204,71 +203,75 @@ class _HomePageState extends State<HomePage> {
                     ),
                   ),
                   // Animated Container for Today text and add button
-                  AnimatedContainer(
-                    duration: Duration(
-                        milliseconds: 800), // Duration of the animation
-                    height: _containerHeight, // Use a variable for height
-                    color: Colors.white, // Set the color to white
-                    curve: Curves.easeInOut, // Animation curve
-                    child: Stack(
-                      // Use Stack to position elements
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment
-                              .spaceBetween, // Distribute space between children
+                  Stack(
+                    children: [
+                      AnimatedContainer(
+                        duration: Duration(
+                            milliseconds: 800), // Duration of the animation
+                        height: _containerHeight, // Use a variable for height
+                        color: Colors.white, // Set the color to white
+                        curve: Curves.easeInOut, // Animation curve
+                        child: Column(
+                          // Use Column to position elements
                           children: [
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment
+                                  .spaceBetween, // Distribute space between children
                               children: [
-                                Padding(
-                                  padding: const EdgeInsets.only(
-                                      left: 8.0, top: 8.0),
-                                  child: Text(
-                                    _getDateStatus(), // Displays "Today"
-                                    style: TextStyle(
-                                      color: Colors.grey[600],
-                                      fontSize: 14, // Adjusted font size
-                                      fontWeight: FontWeight
-                                          .bold, // Adjusted font weight
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Padding(
+                                      padding: const EdgeInsets.only(
+                                          left: 8.0, top: 8.0),
+                                      child: Text(
+                                        _getDateStatus(), // Displays "Today"
+                                        style: TextStyle(
+                                          color: Colors.grey[600],
+                                          fontSize: 14, // Adjusted font size
+                                          fontWeight: FontWeight
+                                              .bold, // Adjusted font weight
+                                        ),
+                                      ),
                                     ),
-                                  ),
-                                ),
-                                Padding(
-                                  padding: const EdgeInsets.only(left: 8.0),
-                                  child: Text(
-                                    '${_getDayName(_selectedDay)}, ${_getMonthName(_selectedDay)} ${_selectedDay.day}', // Displays "Friday, November 1"
-                                    style: TextStyle(
-                                      color: Colors.black87,
-                                      fontSize: 16, // Adjusted font size
-                                      fontWeight: FontWeight
-                                          .w600, // Adjusted font weight
+                                    Padding(
+                                      padding: const EdgeInsets.only(left: 8.0),
+                                      child: Text(
+                                        '${_getDayName(_selectedDay)}, ${_getMonthName(_selectedDay)} ${_selectedDay.day}', // Displays "Friday, November 1"
+                                        style: TextStyle(
+                                          color: Colors.black87,
+                                          fontSize: 16, // Adjusted font size
+                                          fontWeight: FontWeight
+                                              .w600, // Adjusted font weight
+                                        ),
+                                      ),
                                     ),
-                                  ),
+                                  ],
                                 ),
                               ],
                             ),
                           ],
                         ),
-                        Positioned(
-                          // Position the add button
-                          top: 8, // Adjust to align with "Today" text
-                          right: 8, // Adjust as needed
-                          child: Container(
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: Color(0xFF4CAF50), // Button color
-                            ),
-                            child: IconButton(
-                              icon: Icon(Icons.add,
-                                  color: Colors.white), // "+" icon
-                              onPressed: () {
-                                // Add your onPressed functionality here
-                              },
-                            ),
+                      ),
+                      Positioned(
+                        // Position the add button
+                        bottom: 8, // Adjust to align with the bottom
+                        right: 8, // Set to 0 to remove right padding
+                        child: Container(
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Color(0xFF4CAF50), // Button color
+                          ),
+                          child: IconButton(
+                            icon: Icon(Icons.add,
+                                color: Colors.white), // "+" icon
+                            onPressed: () {
+                              // Add your onPressed functionality here
+                            },
                           ),
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 ],
               ),
