@@ -187,48 +187,51 @@ class _HomePageState extends State<HomePage> {
             Padding(
               padding: const EdgeInsets.only(bottom: 16.0),
               child: Container(
-                padding: EdgeInsets.all(16),
-                child: GNav(
-                  gap: 8,
-                  activeColor: Color(0xFF4CAF50),
-                  iconSize: 24,
-                  padding: EdgeInsets.symmetric(horizontal: 20, vertical: 5),
-                  tabs: [
-                    GButton(
-                      icon: Icons.calendar_today,
-                      text: 'Daily',
-                    ),
-                    GButton(
-                      icon: Icons.health_and_safety, // Use appropriate icon
-                      text: 'Health',
-                    ),
-                    GButton(
-                      icon: Icons.medication, // Use appropriate icon
-                      text: 'Medications',
-                    ),
-                    GButton(
-                      icon: Icons.book, // Use appropriate icon
-                      text: 'Definitions',
-                    ),
-                    GButton(
-                      icon: Icons.warning, // Use appropriate icon
-                      text: 'Signs & Symptoms',
-                    ),
-                    GButton(
-                      icon: Icons.local_hospital, // Use appropriate icon
-                      text: 'Hospitals',
-                    ),
-                    GButton(
-                      icon: Icons.settings, // Use appropriate icon
-                      text: 'Settings',
-                    ),
-                  ],
-                  selectedIndex: _selectedIndex,
-                  onTabChange: (index) {
-                    setState(() {
-                      _selectedIndex = index; // Update the selected index
-                    });
-                  },
+                padding: EdgeInsets.all(8),
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: GNav(
+                    gap: 4,
+                    activeColor: Color(0xFF4CAF50),
+                    iconSize: 20,
+                    padding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    tabs: [
+                      GButton(
+                        icon: Icons.calendar_today,
+                        text: 'Daily',
+                      ),
+                      GButton(
+                        icon: Icons.health_and_safety,
+                        text: 'Health',
+                      ),
+                      GButton(
+                        icon: Icons.medication,
+                        text: 'Medications',
+                      ),
+                      GButton(
+                        icon: Icons.book,
+                        text: 'Definitions',
+                      ),
+                      GButton(
+                        icon: Icons.warning,
+                        text: 'Signs & Symptoms',
+                      ),
+                      GButton(
+                        icon: Icons.local_hospital,
+                        text: 'Hospitals',
+                      ),
+                      GButton(
+                        icon: Icons.settings,
+                        text: 'Settings',
+                      ),
+                    ],
+                    selectedIndex: _selectedIndex,
+                    onTabChange: (index) {
+                      setState(() {
+                        _selectedIndex = index; // Update the selected index
+                      });
+                    },
+                  ),
                 ),
               ),
             ),
