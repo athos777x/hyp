@@ -172,36 +172,6 @@ class _HomePageState extends State<HomePage> {
               padding: EdgeInsets.zero,
               child: Column(
                 children: [
-                  // Indicator for swipe action
-                  GestureDetector(
-                    onVerticalDragUpdate: (details) {
-                      if (details.delta.dy > 0) {
-                        // Swipe down
-                        setState(() {
-                          // Collapse the height to a smaller value
-                          _containerHeight =
-                              65.0; // Set to a minimum height instead of 0
-                        });
-                      } else if (details.delta.dy < 0 &&
-                          _containerHeight == 65.0) {
-                        // Swipe up
-                        setState(() {
-                          // Expand the height back to the original value
-                          _containerHeight = 690.0; // Set to original height
-                        });
-                      }
-                    },
-                    child: Container(
-                      width: 28, // Width of the horizontal line
-                      height: 6, // Height of the horizontal line
-                      decoration: BoxDecoration(
-                        color: const Color.fromARGB(
-                            255, 199, 199, 199), // Color of the line
-                        borderRadius:
-                            BorderRadius.circular(10), // Rounded edges
-                      ),
-                    ),
-                  ),
                   // Animated Container for Today text and add button
                   Stack(
                     children: [
@@ -214,6 +184,41 @@ class _HomePageState extends State<HomePage> {
                         child: Column(
                           // Use Column to position elements
                           children: [
+                            // Add padding for the swipe indicator
+                            Padding(
+                              padding: const EdgeInsets.only(
+                                  top: 8.0), // Adjust the top padding as needed
+                              child: GestureDetector(
+                                onVerticalDragUpdate: (details) {
+                                  if (details.delta.dy > 0) {
+                                    // Swipe down
+                                    setState(() {
+                                      // Collapse the height to a smaller value
+                                      _containerHeight =
+                                          65.0; // Set to a minimum height instead of 0
+                                    });
+                                  } else if (details.delta.dy < 0 &&
+                                      _containerHeight == 65.0) {
+                                    // Swipe up
+                                    setState(() {
+                                      // Expand the height back to the original value
+                                      _containerHeight =
+                                          690.0; // Set to original height
+                                    });
+                                  }
+                                },
+                                child: Container(
+                                  width: 28, // Width of the horizontal line
+                                  height: 6, // Height of the horizontal line
+                                  decoration: BoxDecoration(
+                                    color: const Color.fromARGB(255, 199, 199,
+                                        199), // Color of the line
+                                    borderRadius: BorderRadius.circular(
+                                        10), // Rounded edges
+                                  ),
+                                ),
+                              ),
+                            ),
                             Row(
                               mainAxisAlignment: MainAxisAlignment
                                   .spaceBetween, // Distribute space between children
