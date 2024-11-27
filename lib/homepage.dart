@@ -15,6 +15,7 @@ class _HomePageState extends State<HomePage> {
       375.0; // Set an estimated height for each month item
   late ScrollController _scrollController;
   int _selectedIndex = 0; // Track the selected index
+  double _containerHeight = 698.0; // Set a default height for the container
 
   @override
   void initState() {
@@ -170,42 +171,88 @@ class _HomePageState extends State<HomePage> {
             Padding(
               padding:
                   const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment
-                    .spaceBetween, // Distribute space between children
+              child: Column(
                 children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        _getDateStatus(), // Displays "Today"
-                        style: TextStyle(
+                  // Indicator for swipe action
+                  GestureDetector(
+                    onVerticalDragUpdate: (details) {
+                      if (details.delta.dy > 0) {
+                        // Swipe down
+                        setState(() {
+                          // Collapse the height to a smaller value
+                          _containerHeight =
+                              0.0; // Set to 0 or a smaller height
+                        });
+                      } else if (details.delta.dy < 0 &&
+                          _containerHeight == 0.0) {
+                        // Swipe up
+                        setState(() {
+                          // Expand the height back to the original value
+                          _containerHeight = 698.0; // Set to original height
+                        });
+                      }
+                    },
+                    child: Column(
+                      children: [
+                        // Swipe arrow indicator
+                        Icon(
+                          _containerHeight ==
+                                  0.0 // Check if the container is collapsed
+                              ? Icons
+                                  .arrow_upward // Show up arrow when collapsed
+                              : Icons
+                                  .arrow_downward, // Show down arrow when expanded
                           color: Colors.grey[600],
-                          fontSize: 14, // Adjusted font size
-                          fontWeight: FontWeight.bold, // Adjusted font weight
+                          size: 20,
                         ),
-                      ),
-                      Text(
-                        '${_getDayName(_selectedDay)}, ${_getMonthName(_selectedDay)} ${_selectedDay.day}', // Displays "Friday, November 1"
-                        style: TextStyle(
-                          color: Colors.black87,
-                          fontSize: 16, // Adjusted font size
-                          fontWeight: FontWeight.w600, // Adjusted font weight
-                        ),
-                      ),
-                    ],
-                  ),
-                  // Add button on the right
-                  Container(
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Color(0xFF4CAF50), // Button color
+                      ],
                     ),
-                    child: IconButton(
-                      icon: Icon(Icons.add, color: Colors.white), // "+" icon
-                      onPressed: () {
-                        // Add your onPressed functionality here
-                      },
+                  ),
+                  // Container for Today text and add button
+                  Container(
+                    height: _containerHeight, // Use a variable for height
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment
+                          .spaceBetween, // Distribute space between children
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              _getDateStatus(), // Displays "Today"
+                              style: TextStyle(
+                                color: Colors.grey[600],
+                                fontSize: 14, // Adjusted font size
+                                fontWeight:
+                                    FontWeight.bold, // Adjusted font weight
+                              ),
+                            ),
+                            Text(
+                              '${_getDayName(_selectedDay)}, ${_getMonthName(_selectedDay)} ${_selectedDay.day}', // Displays "Friday, November 1"
+                              style: TextStyle(
+                                color: Colors.black87,
+                                fontSize: 16, // Adjusted font size
+                                fontWeight:
+                                    FontWeight.w600, // Adjusted font weight
+                              ),
+                            ),
+                          ],
+                        ),
+                        // Add button on the right
+                        Container(
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Color(0xFF4CAF50), // Button color
+                          ),
+                          child: IconButton(
+                            icon: Icon(Icons.add,
+                                color: Colors.white), // "+" icon
+                            onPressed: () {
+                              // Add your onPressed functionality here
+                            },
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],
