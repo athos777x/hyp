@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_nav_bar/google_nav_bar.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -13,6 +14,7 @@ class _HomePageState extends State<HomePage> {
   final double itemHeight =
       375.0; // Set an estimated height for each month item
   late ScrollController _scrollController;
+  int _selectedIndex = 0; // Track the selected index
 
   @override
   void initState() {
@@ -181,27 +183,53 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
 
-            // Bottom Navigation
-            Container(
-              padding: EdgeInsets.all(16),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: [
-                  Row(
-                    children: [
-                      Icon(Icons.calendar_today, color: Color(0xFF4CAF50)),
-                      SizedBox(width: 4),
-                      Text(
-                        'Daily',
-                        style: TextStyle(color: Color(0xFF4CAF50)),
-                      ),
-                    ],
-                  ),
-                  Icon(Icons.favorite_border, color: Colors.grey[600]),
-                  Icon(Icons.star_border, color: Colors.grey[600]),
-                  Icon(Icons.person_outline, color: Colors.grey[600]),
-                  Icon(Icons.more_horiz, color: Colors.grey[600]),
-                ],
+            // Bottom Navigation Bar
+            Padding(
+              padding: const EdgeInsets.only(bottom: 16.0),
+              child: Container(
+                padding: EdgeInsets.all(16),
+                child: GNav(
+                  gap: 8,
+                  activeColor: Color(0xFF4CAF50),
+                  iconSize: 24,
+                  padding: EdgeInsets.symmetric(horizontal: 20, vertical: 5),
+                  tabs: [
+                    GButton(
+                      icon: Icons.calendar_today,
+                      text: 'Daily',
+                    ),
+                    GButton(
+                      icon: Icons.health_and_safety, // Use appropriate icon
+                      text: 'Health',
+                    ),
+                    GButton(
+                      icon: Icons.medication, // Use appropriate icon
+                      text: 'Medications',
+                    ),
+                    GButton(
+                      icon: Icons.book, // Use appropriate icon
+                      text: 'Definitions',
+                    ),
+                    GButton(
+                      icon: Icons.warning, // Use appropriate icon
+                      text: 'Signs & Symptoms',
+                    ),
+                    GButton(
+                      icon: Icons.local_hospital, // Use appropriate icon
+                      text: 'Hospitals',
+                    ),
+                    GButton(
+                      icon: Icons.settings, // Use appropriate icon
+                      text: 'Settings',
+                    ),
+                  ],
+                  selectedIndex: _selectedIndex,
+                  onTabChange: (index) {
+                    setState(() {
+                      _selectedIndex = index; // Update the selected index
+                    });
+                  },
+                ),
               ),
             ),
           ],
