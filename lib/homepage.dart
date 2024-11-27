@@ -69,8 +69,13 @@ class _HomePageState extends State<HomePage> {
                 controller: _scrollController,
                 itemBuilder: (context, index) {
                   // Calculate the month to display based on the index
-                  final displayMonth = DateTime(2023, 1).add(
-                      Duration(days: 30 * index)); // Start from January 2023
+                  final displayMonth = DateTime(2024, 1).add(
+                      Duration(days: 30 * index)); // Start from January 2024
+                  // Adjust the calculation to ensure it doesn't exceed December 2026
+                  final monthOffset = index % 12; // Get the month offset
+                  final yearOffset = index ~/ 12; // Get the year offset
+                  final adjustedMonth =
+                      DateTime(2024 + yearOffset, 1 + monthOffset);
 
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -80,7 +85,7 @@ class _HomePageState extends State<HomePage> {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 16.0, vertical: 0.0),
                         child: Text(
-                          '${_getMonthName(displayMonth)} ${displayMonth.year}',
+                          '${_getMonthName(adjustedMonth)} ${adjustedMonth.year}',
                           style: TextStyle(
                             color: Colors.black87,
                             fontSize: 16,
@@ -102,19 +107,19 @@ class _HomePageState extends State<HomePage> {
                             mainAxisSpacing: 8,
                             crossAxisSpacing: 8,
                           ),
-                          itemCount: _getDaysInMonth(displayMonth) +
-                              _getFirstWeekdayOfMonth(displayMonth),
+                          itemCount: _getDaysInMonth(adjustedMonth) +
+                              _getFirstWeekdayOfMonth(adjustedMonth),
                           itemBuilder: (context, index) {
                             // Skip empty spaces at the beginning of the month
                             final firstWeekday =
-                                _getFirstWeekdayOfMonth(displayMonth);
+                                _getFirstWeekdayOfMonth(adjustedMonth);
                             if (index < firstWeekday) {
                               return Container(); // Empty space
                             }
 
                             final dayIndex = index - firstWeekday;
-                            final date = DateTime(displayMonth.year,
-                                displayMonth.month, dayIndex + 1);
+                            final date = DateTime(adjustedMonth.year,
+                                adjustedMonth.month, dayIndex + 1);
                             final isSelected = _selectedDay.year == date.year &&
                                 _selectedDay.month == date.month &&
                                 _selectedDay.day == date.day;
@@ -162,8 +167,8 @@ class _HomePageState extends State<HomePage> {
                     ],
                   );
                 },
-                itemCount: (2040 - 2023 + 1) *
-                    12, // Total months from Jan 2023 to Dec 2040
+                itemCount: (2026 - 2024 + 1) *
+                    12, // Total months from Jan 2024 to Dec 2026
               ),
             ),
 
