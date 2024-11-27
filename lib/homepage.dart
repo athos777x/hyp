@@ -166,25 +166,46 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
 
-            // Today text
+            // Today text and add button
             Padding(
               padding:
                   const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment
+                    .spaceBetween, // Distribute space between children
                 children: [
-                  Text(
-                    _getDateStatus(),
-                    style: TextStyle(
-                      color: Colors.grey[600],
-                      fontSize: 12,
-                    ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        _getDateStatus(), // Displays "Today"
+                        style: TextStyle(
+                          color: Colors.grey[600],
+                          fontSize: 14, // Adjusted font size
+                          fontWeight: FontWeight.bold, // Adjusted font weight
+                        ),
+                      ),
+                      Text(
+                        '${_getDayName(_selectedDay)}, ${_getMonthName(_selectedDay)} ${_selectedDay.day}', // Displays "Friday, November 1"
+                        style: TextStyle(
+                          color: Colors.black87,
+                          fontSize: 16, // Adjusted font size
+                          fontWeight: FontWeight.w600, // Adjusted font weight
+                        ),
+                      ),
+                    ],
                   ),
-                  Text(
-                    '${_getDayName(_selectedDay)}, ${_getMonthName(_selectedDay)} ${_selectedDay.day}',
-                    style: TextStyle(
-                      color: Colors.black87,
-                      fontSize: 14,
+                  // Add button on the right
+                  Container(
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Color(0xFF4CAF50), // Button color
+                    ),
+                    child: IconButton(
+                      icon: Icon(Icons.add, color: Colors.white), // "+" icon
+                      onPressed: () {
+                        // Add your onPressed functionality here
+                      },
                     ),
                   ),
                 ],
