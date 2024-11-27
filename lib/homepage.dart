@@ -223,7 +223,7 @@ class _HomePageState extends State<HomePage> {
                                   children: [
                                     Padding(
                                       padding: const EdgeInsets.only(
-                                          left: 8.0, top: 8.0),
+                                          left: 16.0, top: 8.0),
                                       child: Text(
                                         _getDateStatus(), // Displays "Today"
                                         style: TextStyle(
@@ -235,7 +235,8 @@ class _HomePageState extends State<HomePage> {
                                       ),
                                     ),
                                     Padding(
-                                      padding: const EdgeInsets.only(left: 8.0),
+                                      padding:
+                                          const EdgeInsets.only(left: 16.0),
                                       child: Text(
                                         '${_getDayName(_selectedDay)}, ${_getMonthName(_selectedDay)} ${_selectedDay.day}', // Displays "Friday, November 1"
                                         style: TextStyle(
@@ -256,7 +257,7 @@ class _HomePageState extends State<HomePage> {
                       Positioned(
                         // Position the add button
                         bottom: 8, // Adjust to align with the bottom
-                        right: 8, // Set to 0 to remove right padding
+                        right: 16, // Set to 0 to remove right padding
                         child: Container(
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
