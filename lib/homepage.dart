@@ -209,45 +209,54 @@ class _HomePageState extends State<HomePage> {
                         milliseconds: 800), // Duration of the animation
                     height: _containerHeight, // Use a variable for height
                     curve: Curves.easeInOut, // Animation curve
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment
-                          .spaceBetween, // Distribute space between children
+                    child: Stack(
+                      // Use Stack to position elements
                       children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment
+                              .spaceBetween, // Distribute space between children
                           children: [
-                            Text(
-                              _getDateStatus(), // Displays "Today"
-                              style: TextStyle(
-                                color: Colors.grey[600],
-                                fontSize: 14, // Adjusted font size
-                                fontWeight:
-                                    FontWeight.bold, // Adjusted font weight
-                              ),
-                            ),
-                            Text(
-                              '${_getDayName(_selectedDay)}, ${_getMonthName(_selectedDay)} ${_selectedDay.day}', // Displays "Friday, November 1"
-                              style: TextStyle(
-                                color: Colors.black87,
-                                fontSize: 16, // Adjusted font size
-                                fontWeight:
-                                    FontWeight.w600, // Adjusted font weight
-                              ),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  _getDateStatus(), // Displays "Today"
+                                  style: TextStyle(
+                                    color: Colors.grey[600],
+                                    fontSize: 14, // Adjusted font size
+                                    fontWeight:
+                                        FontWeight.bold, // Adjusted font weight
+                                  ),
+                                ),
+                                Text(
+                                  '${_getDayName(_selectedDay)}, ${_getMonthName(_selectedDay)} ${_selectedDay.day}', // Displays "Friday, November 1"
+                                  style: TextStyle(
+                                    color: Colors.black87,
+                                    fontSize: 16, // Adjusted font size
+                                    fontWeight:
+                                        FontWeight.w600, // Adjusted font weight
+                                  ),
+                                ),
+                              ],
                             ),
                           ],
                         ),
-                        // Add button on the right
-                        Container(
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: Color(0xFF4CAF50), // Button color
-                          ),
-                          child: IconButton(
-                            icon: Icon(Icons.add,
-                                color: Colors.white), // "+" icon
-                            onPressed: () {
-                              // Add your onPressed functionality here
-                            },
+                        Positioned(
+                          // Position the add button
+                          top: 8, // Adjust to align with "Today" text
+                          right: 8, // Adjust as needed
+                          child: Container(
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: Color(0xFF4CAF50), // Button color
+                            ),
+                            child: IconButton(
+                              icon: Icon(Icons.add,
+                                  color: Colors.white), // "+" icon
+                              onPressed: () {
+                                // Add your onPressed functionality here
+                              },
+                            ),
                           ),
                         ),
                       ],
