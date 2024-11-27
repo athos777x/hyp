@@ -190,7 +190,6 @@ class _HomePageState extends State<HomePage> {
                 ],
               ),
             ),
-
             // Bottom Navigation Bar
             Padding(
               padding: const EdgeInsets.only(bottom: 16.0),
@@ -206,6 +205,7 @@ class _HomePageState extends State<HomePage> {
                         gap: 4,
                         activeColor: Color(0xFF4CAF50),
                         iconSize: 17,
+                        backgroundColor: Color.fromARGB(255, 255, 255, 255),
                         padding:
                             EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                         tabMargin: EdgeInsets.symmetric(
