@@ -11,7 +11,7 @@ class _HomePageState extends State<HomePage> {
   late DateTime _selectedDay;
   late int _initialMonthIndex;
   final double itemHeight =
-      405.0; // Set an estimated height for each month item
+      375.0; // Set an estimated height for each month item
   late ScrollController _scrollController;
 
   @override
