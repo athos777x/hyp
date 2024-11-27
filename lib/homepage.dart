@@ -212,41 +212,35 @@ class _HomePageState extends State<HomePage> {
                             horizontal: 4), // Reduced margin
                         tabBackgroundColor: Color(0xFF4CAF50)
                             .withOpacity(0.1), // Selected tab background color
+                        color: Colors.grey,
                         tabs: [
                           GButton(
                             icon: Icons.calendar_today,
                             text: 'Daily',
-                            iconColor: Colors.grey,
                           ),
                           GButton(
                             icon: Icons.health_and_safety,
                             text: 'Health',
-                            iconColor: Colors.grey,
                           ),
                           GButton(
                             icon: Icons.medication,
                             text: 'Medications',
-                            iconColor: Colors.grey,
                           ),
                           GButton(
                             icon: Icons.book,
                             text: 'Definitions',
-                            iconColor: Colors.grey,
                           ),
                           GButton(
                             icon: Icons.warning,
                             text: 'S/Sx',
-                            iconColor: Colors.grey,
                           ),
                           GButton(
                             icon: Icons.local_hospital,
                             text: 'Hospitals',
-                            iconColor: Colors.grey,
                           ),
                           GButton(
                             icon: Icons.settings,
                             text: 'Settings',
-                            iconColor: Colors.grey,
                           ),
                         ],
                         selectedIndex: _selectedIndex,
