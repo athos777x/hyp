@@ -187,51 +187,67 @@ class _HomePageState extends State<HomePage> {
             Padding(
               padding: const EdgeInsets.only(bottom: 16.0),
               child: Container(
+                width: MediaQuery.of(context).size.width, // Ensure full width
                 padding: EdgeInsets.all(8),
-                child: SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: GNav(
-                    gap: 4,
-                    activeColor: Color(0xFF4CAF50),
-                    iconSize: 20,
-                    padding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                    tabs: [
-                      GButton(
-                        icon: Icons.calendar_today,
-                        text: 'Daily',
+                child: Row(
+                  mainAxisAlignment:
+                      MainAxisAlignment.spaceBetween, // Distribute space evenly
+                  children: [
+                    Expanded(
+                      child: GNav(
+                        gap: 4,
+                        activeColor: Color(0xFF4CAF50),
+                        iconSize: 17,
+                        padding:
+                            EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                        tabMargin: EdgeInsets.symmetric(
+                            horizontal: 4), // Reduced margin
+                        tabs: [
+                          GButton(
+                            icon: Icons.calendar_today,
+                            text: 'Daily',
+                            iconColor: Colors.grey,
+                          ),
+                          GButton(
+                            icon: Icons.health_and_safety,
+                            text: 'Health',
+                            iconColor: Colors.grey,
+                          ),
+                          GButton(
+                            icon: Icons.medication,
+                            text: 'Medications',
+                            iconColor: Colors.grey,
+                          ),
+                          GButton(
+                            icon: Icons.book,
+                            text: 'Definitions',
+                            iconColor: Colors.grey,
+                          ),
+                          GButton(
+                            icon: Icons.warning,
+                            text: 'S/Sx',
+                            iconColor: Colors.grey,
+                          ),
+                          GButton(
+                            icon: Icons.local_hospital,
+                            text: 'Hospitals',
+                            iconColor: Colors.grey,
+                          ),
+                          GButton(
+                            icon: Icons.settings,
+                            text: 'Settings',
+                            iconColor: Colors.grey,
+                          ),
+                        ],
+                        selectedIndex: _selectedIndex,
+                        onTabChange: (index) {
+                          setState(() {
+                            _selectedIndex = index; // Update the selected index
+                          });
+                        },
                       ),
-                      GButton(
-                        icon: Icons.health_and_safety,
-                        text: 'Health',
-                      ),
-                      GButton(
-                        icon: Icons.medication,
-                        text: 'Medications',
-                      ),
-                      GButton(
-                        icon: Icons.book,
-                        text: 'Definitions',
-                      ),
-                      GButton(
-                        icon: Icons.warning,
-                        text: 'Signs & Symptoms',
-                      ),
-                      GButton(
-                        icon: Icons.local_hospital,
-                        text: 'Hospitals',
-                      ),
-                      GButton(
-                        icon: Icons.settings,
-                        text: 'Settings',
-                      ),
-                    ],
-                    selectedIndex: _selectedIndex,
-                    onTabChange: (index) {
-                      setState(() {
-                        _selectedIndex = index; // Update the selected index
-                      });
-                    },
-                  ),
+                    ),
+                  ],
                 ),
               ),
             ),
