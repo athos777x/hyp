@@ -258,17 +258,20 @@ class _HomePageState extends State<HomePage> {
                         // Position the add button
                         bottom: 8, // Adjust to align with the bottom
                         right: 16, // Set to 0 to remove right padding
-                        child: Container(
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: Color(0xFF4CAF50), // Button color
-                          ),
-                          child: IconButton(
-                            icon: Icon(Icons.add,
-                                color: Colors.white), // "+" icon
-                            onPressed: () {
-                              // Add your onPressed functionality here
-                            },
+                        child: Padding(
+                          padding: const EdgeInsets.only(top: 8.0),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: Color(0xFF4CAF50), // Button color
+                            ),
+                            child: IconButton(
+                              icon: Icon(Icons.add,
+                                  color: Colors.white), // "+" icon
+                              onPressed: () {
+                                // Add your onPressed functionality here
+                              },
+                            ),
                           ),
                         ),
                       ),
