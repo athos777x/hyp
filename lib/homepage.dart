@@ -180,10 +180,10 @@ class _HomePageState extends State<HomePage> {
                         setState(() {
                           // Collapse the height to a smaller value
                           _containerHeight =
-                              0.0; // Set to 0 or a smaller height
+                              65.0; // Set to a minimum height instead of 0
                         });
                       } else if (details.delta.dy < 0 &&
-                          _containerHeight == 0.0) {
+                          _containerHeight == 65.0) {
                         // Swipe up
                         setState(() {
                           // Expand the height back to the original value
