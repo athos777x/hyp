@@ -191,67 +191,72 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
             // Bottom Navigation Bar
-            Padding(
-              padding: const EdgeInsets.only(bottom: 16.0),
-              child: Container(
-                width: MediaQuery.of(context).size.width, // Ensure full width
-                padding: EdgeInsets.all(8),
-                child: Row(
-                  mainAxisAlignment:
-                      MainAxisAlignment.spaceBetween, // Distribute space evenly
-                  children: [
-                    Expanded(
-                      child: GNav(
-                        gap: 4,
-                        activeColor: Color(0xFF4CAF50),
-                        iconSize: 17,
-                        backgroundColor: Color.fromARGB(255, 255, 255, 255),
-                        padding:
-                            EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                        tabMargin: EdgeInsets.symmetric(
-                            horizontal: 4), // Reduced margin
-                        tabBackgroundColor: Color(0xFF4CAF50)
-                            .withOpacity(0.1), // Selected tab background color
-                        color: Colors.grey,
-                        tabs: [
-                          GButton(
-                            icon: Icons.calendar_today,
-                            text: 'Daily',
-                          ),
-                          GButton(
-                            icon: Icons.health_and_safety,
-                            text: 'Health',
-                          ),
-                          GButton(
-                            icon: Icons.medication,
-                            text: 'Medications',
-                          ),
-                          GButton(
-                            icon: Icons.book,
-                            text: 'Definitions',
-                          ),
-                          GButton(
-                            icon: Icons.warning,
-                            text: 'S/Sx',
-                          ),
-                          GButton(
-                            icon: Icons.local_hospital,
-                            text: 'Hospitals',
-                          ),
-                          GButton(
-                            icon: Icons.settings,
-                            text: 'Settings',
-                          ),
-                        ],
-                        selectedIndex: _selectedIndex,
-                        onTabChange: (index) {
-                          setState(() {
-                            _selectedIndex = index; // Update the selected index
-                          });
-                        },
+            Container(
+              color: Colors.white, // Set your desired background color here
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 10.0),
+                child: Container(
+                  width: MediaQuery.of(context).size.width, // Ensure full width
+                  padding: EdgeInsets.all(8),
+                  color: Colors.white,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment
+                        .spaceBetween, // Distribute space evenly
+                    children: [
+                      Expanded(
+                        child: GNav(
+                          gap: 4,
+                          activeColor: Color(0xFF4CAF50),
+                          iconSize: 17,
+                          backgroundColor: Color.fromARGB(255, 255, 255, 255),
+                          padding:
+                              EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                          tabMargin: EdgeInsets.symmetric(
+                              horizontal: 4), // Reduced margin
+                          tabBackgroundColor: Color(0xFF4CAF50).withOpacity(
+                              0.1), // Selected tab background color
+                          color: Colors.grey,
+                          tabs: [
+                            GButton(
+                              icon: Icons.calendar_today,
+                              text: 'Daily',
+                            ),
+                            GButton(
+                              icon: Icons.health_and_safety,
+                              text: 'Health',
+                            ),
+                            GButton(
+                              icon: Icons.medication,
+                              text: 'Medications',
+                            ),
+                            GButton(
+                              icon: Icons.book,
+                              text: 'Definitions',
+                            ),
+                            GButton(
+                              icon: Icons.warning,
+                              text: 'S/Sx',
+                            ),
+                            GButton(
+                              icon: Icons.local_hospital,
+                              text: 'Hospitals',
+                            ),
+                            GButton(
+                              icon: Icons.settings,
+                              text: 'Settings',
+                            ),
+                          ],
+                          selectedIndex: _selectedIndex,
+                          onTabChange: (index) {
+                            setState(() {
+                              _selectedIndex =
+                                  index; // Update the selected index
+                            });
+                          },
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
