@@ -1,5 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:google_nav_bar/google_nav_bar.dart';
+import 'healthpage.dart'; // Import the HealthPage
+import 'medicationspage.dart'; // Import the MedicationsPage
+import 'definitionspage.dart'; // Import the DefinitionsPage
+import 'signsandsymptomspage.dart'; // Import the SignsAndSymptomsPage
+import 'hospitalspage.dart'; // Import the HospitalsPage
+import 'settingspage.dart'; // Import the SettingsPage
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -349,6 +355,8 @@ class _HomePageState extends State<HomePage> {
                               _selectedIndex =
                                   index; // Update the selected index
                             });
+                            _navigateToPage(index,
+                                context); // Navigate to the selected page
                           },
                         ),
                       ),
@@ -361,6 +369,50 @@ class _HomePageState extends State<HomePage> {
         ),
       ),
     );
+  }
+
+  void _navigateToPage(int index, BuildContext context) {
+    switch (index) {
+      case 0:
+        // Daily button clicked, stay on HomePage
+        break;
+      case 1:
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => HealthPage()),
+        );
+        break;
+      case 2:
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => MedicationsPage()),
+        );
+        break;
+      case 3:
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => DefinitionsPage()),
+        );
+        break;
+      case 4:
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => SignsAndSymptomsPage()),
+        );
+        break;
+      case 5:
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => HospitalsPage()),
+        );
+        break;
+      case 6:
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => SettingsPage()),
+        );
+        break;
+    }
   }
 
   String _getMonthName(DateTime date) {
