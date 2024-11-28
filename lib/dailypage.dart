@@ -221,7 +221,7 @@ class _DailyPageState extends State<DailyPage> {
                                   children: [
                                     Padding(
                                       padding: const EdgeInsets.only(
-                                          left: 16.0, top: 8.0),
+                                          left: 16.0, top: 0.0),
                                       child: Text(
                                         _getDateStatus(), // Displays "Today"
                                         style: TextStyle(
