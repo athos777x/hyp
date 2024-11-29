@@ -69,7 +69,7 @@ class _DailyPageState extends State<DailyPage> {
                       DateTime(2024 + yearOffset, 1 + monthOffset);
 
                   return Container(
-                    height: itemHeight,
+                    height: _calculateMonthHeight(adjustedMonth),
                     margin: EdgeInsets.only(bottom: 32.0),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -110,16 +110,25 @@ class _DailyPageState extends State<DailyPage> {
                                 final firstWeekday =
                                     _getFirstWeekdayOfMonth(adjustedMonth);
                                 if (index < firstWeekday) {
-                                  return Container(); // Empty space for beginning of month
+                                  final prevMonth = DateTime(adjustedMonth.year,
+                                      adjustedMonth.month - 1);
+                                  final daysInPrevMonth =
+                                      _getDaysInMonth(prevMonth);
+                                  final prevMonthDay = daysInPrevMonth -
+                                      (firstWeekday - index - 1);
+                                  return _buildDayContainer(prevMonthDay, false,
+                                      false, Colors.grey[600]);
                                 }
 
                                 final dayIndex = index - firstWeekday;
                                 final daysInMonth =
                                     _getDaysInMonth(adjustedMonth);
 
-                                // Check if we've exceeded the days in the month
                                 if (dayIndex >= daysInMonth) {
-                                  return Container(); // Empty space for end of month
+                                  final nextMonthDay =
+                                      dayIndex - daysInMonth + 1;
+                                  return _buildDayContainer(nextMonthDay, false,
+                                      false, Colors.grey[600]);
                                 }
 
                                 final date = DateTime(
@@ -140,40 +149,8 @@ class _DailyPageState extends State<DailyPage> {
 
                                 return GestureDetector(
                                   onTap: () => _onDateSelected(date),
-                                  child: Container(
-                                    decoration: BoxDecoration(
-                                      shape: BoxShape.circle,
-                                      color: isSelected
-                                          ? Color(
-                                              0xFF4CAF50) // Selected date color
-                                          : isToday
-                                              ? const Color.fromARGB(
-                                                  255,
-                                                  204,
-                                                  204,
-                                                  204) // Current date color
-                                              : Colors
-                                                  .white, // Other dates color
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: Colors.black.withOpacity(0.05),
-                                          blurRadius: 1,
-                                          spreadRadius: 1,
-                                        ),
-                                      ],
-                                    ),
-                                    child: Center(
-                                      child: Text(
-                                        '${dayIndex + 1}',
-                                        style: TextStyle(
-                                          color: isSelected
-                                              ? Colors.white
-                                              : Colors.black87,
-                                          fontSize: 14,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
+                                  child: _buildDayContainer(
+                                      dayIndex + 1, isSelected, isToday, null),
                                 );
                               },
                             ),
@@ -397,17 +374,23 @@ class _DailyPageState extends State<DailyPage> {
     final weekSpacing = 8.0;
     final gridPadding = 16.0;
     final monthSpacing = 32.0;
+    final adjustmentOffset = 8.0;
 
-    // Calculate total height of each month including spacing
-    final totalMonthHeight = itemHeight + monthSpacing;
+    // Calculate accumulated height of previous months
+    double accumulatedHeight = 0;
+    for (int i = 0; i < monthIndex; i++) {
+      final currentMonth = DateTime(2024 + (i ~/ 12), 1 + (i % 12));
+      accumulatedHeight += _calculateMonthHeight(currentMonth) + monthSpacing;
+    }
 
-    // Calculate week position within the month
+    // Calculate week position within the current month
     final weekPositionInMonth = (weekNumber * (weekHeight + weekSpacing)) +
         monthHeaderHeight +
-        gridPadding;
+        gridPadding -
+        adjustmentOffset;
 
     // Calculate base scroll position
-    final basePosition = (monthIndex * totalMonthHeight) + weekPositionInMonth;
+    final basePosition = accumulatedHeight + weekPositionInMonth;
 
     // Calculate visible area
     final visibleHeight = MediaQuery.of(context).size.height -
@@ -416,14 +399,7 @@ class _DailyPageState extends State<DailyPage> {
         MediaQuery.of(context).padding.top;
 
     // Adjust the position to show the selected week at a better position
-    final targetPosition =
-        basePosition - (visibleHeight * 0.10); // Changed from 0.22 to 0.23
-
-    print('Day of Month: $dayOfMonth');
-    print('Week Number: $weekNumber');
-    print('Base Position: $basePosition');
-    print('Visible Height: $visibleHeight');
-    print('Target Position: $targetPosition');
+    final targetPosition = basePosition - (visibleHeight * 0.04);
 
     _scrollController.animateTo(
       targetPosition,
@@ -437,10 +413,57 @@ class _DailyPageState extends State<DailyPage> {
     final firstWeekday = _getFirstWeekdayOfMonth(month);
     final totalDays = daysInMonth + firstWeekday;
 
-    // Calculate the number of rows needed and ensure we have enough space
-    final rows = ((totalDays + 6) / 7).ceil(); // Add 6 to ensure we round up
+    // Calculate the exact number of rows needed without extra padding
+    final rows = (totalDays / 7).ceil();
 
     // Return total grid spaces (7 columns × number of rows)
     return rows * 7;
+  }
+
+  Widget _buildDayContainer(
+      int day, bool isSelected, bool isToday, Color? textColor) {
+    return Container(
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: isSelected
+            ? Color(0xFF4CAF50)
+            : isToday
+                ? const Color.fromARGB(255, 204, 204, 204)
+                : Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 1,
+            spreadRadius: 1,
+          ),
+        ],
+      ),
+      child: Center(
+        child: Text(
+          '$day',
+          style: TextStyle(
+            color: textColor ?? Colors.black87,
+            fontSize: 14,
+          ),
+        ),
+      ),
+    );
+  }
+
+  double _calculateMonthHeight(DateTime month) {
+    final daysInMonth = _getDaysInMonth(month);
+    final firstWeekday = _getFirstWeekdayOfMonth(month);
+    final totalDays = daysInMonth + firstWeekday;
+    final rows = (totalDays / 7).ceil();
+
+    final monthHeaderHeight = 32.0;
+    final gridPadding = 48.0;
+    final totalRowsHeight = rows * weekHeight;
+    final totalSpacingHeight = (rows - 1) * 8.0;
+
+    return totalRowsHeight +
+        totalSpacingHeight +
+        monthHeaderHeight +
+        gridPadding;
   }
 }
