@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:math';
 
 class DailyPage extends StatefulWidget {
   @override
@@ -15,15 +16,22 @@ class _DailyPageState extends State<DailyPage> {
   final double weekHeight = 52.0; // Height of a single week row
   final double headerHeight = 70.0; // Height of the weekday header
 
+  late int _startYear;
+  late int _endYear;
+
   @override
   void initState() {
     super.initState();
     _selectedDay = DateTime.now();
     _scrollController = ScrollController();
 
+    // Initialize the year range
+    _startYear = 2024;
+    _endYear = max(
+        2026, DateTime.now().year + 1); // Always show at least one year ahead
+
     // Wait for the first frame to be rendered before scrolling
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      // Since container is expanded by default, use _scrollToSelectedWeek
       _scrollToSelectedWeek();
     });
   }
@@ -66,7 +74,7 @@ class _DailyPageState extends State<DailyPage> {
                   final monthOffset = index % 12;
                   final yearOffset = index ~/ 12;
                   final adjustedMonth =
-                      DateTime(2024 + yearOffset, 1 + monthOffset);
+                      DateTime(_startYear + yearOffset, 1 + monthOffset);
 
                   return Container(
                     height: _calculateMonthHeight(adjustedMonth),
@@ -196,7 +204,8 @@ class _DailyPageState extends State<DailyPage> {
                     ),
                   );
                 },
-                itemCount: (2026 - 2024 + 1) * 12,
+                itemCount:
+                    (_endYear - _startYear + 1) * 12, // Dynamic item count
               ),
             ),
 
@@ -384,11 +393,11 @@ class _DailyPageState extends State<DailyPage> {
   }
 
   void _onDateSelected(DateTime date) {
+    _updateYearRange(); // Check if we need to extend the range
     setState(() {
       _selectedDay = date;
     });
 
-    // Only scroll to center the week if the container is expanded
     if (_containerHeight > 65.0) {
       _scrollToSelectedWeek();
     }
@@ -403,7 +412,7 @@ class _DailyPageState extends State<DailyPage> {
     final weekNumber = (adjustedDay - 1) ~/ 7;
 
     final monthIndex =
-        (_selectedDay.year - 2024) * 12 + (_selectedDay.month - 1);
+        (_selectedDay.year - _startYear) * 12 + (_selectedDay.month - 1);
 
     // Fine-tuned measurements
     final monthHeaderHeight = 32.0;
@@ -415,7 +424,7 @@ class _DailyPageState extends State<DailyPage> {
     // Calculate accumulated height of previous months
     double accumulatedHeight = 0;
     for (int i = 0; i < monthIndex; i++) {
-      final currentMonth = DateTime(2024 + (i ~/ 12), 1 + (i % 12));
+      final currentMonth = DateTime(_startYear + (i ~/ 12), 1 + (i % 12));
       accumulatedHeight += _calculateMonthHeight(currentMonth) + monthSpacing;
     }
 
@@ -515,5 +524,14 @@ class _DailyPageState extends State<DailyPage> {
         totalSpacingHeight +
         monthHeaderHeight +
         gridPadding;
+  }
+
+  void _updateYearRange() {
+    final currentYear = DateTime.now().year;
+    if (currentYear >= _endYear) {
+      setState(() {
+        _endYear = currentYear + 1; // Always show one year ahead
+      });
+    }
   }
 }
