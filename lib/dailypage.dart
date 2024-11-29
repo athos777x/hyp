@@ -14,17 +14,20 @@ class _DailyPageState extends State<DailyPage> {
 
   double _containerHeight = 708.0; // Set a default height for the container
 
+  final double weekHeight = 52.0; // Height of a single week row
+  final double headerHeight = 70.0; // Height of the weekday header
+
   @override
   void initState() {
     super.initState();
-    _selectedDay = DateTime.now(); // Set default to current date
-    _initialMonthIndex =
-        _calculateInitialMonthIndex(); // Calculate initial month index
-    // Add a small delay to ensure proper scrolling after layout
+    _selectedDay = DateTime.now();
+    _initialMonthIndex = _calculateInitialMonthIndex();
+    _scrollController = ScrollController();
+
+    // Only scroll to the initial month, not the week
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _scrollController.jumpTo(_initialMonthIndex * itemHeight);
     });
-    _scrollController = ScrollController();
   }
 
   @override
@@ -97,6 +100,8 @@ class _DailyPageState extends State<DailyPage> {
                             crossAxisCount: 7,
                             mainAxisSpacing: 8,
                             crossAxisSpacing: 8,
+                            mainAxisExtent:
+                                weekHeight, // Use fixed height for rows
                           ),
                           itemCount: _getDaysInMonth(adjustedMonth) +
                               _getFirstWeekdayOfMonth(adjustedMonth),
@@ -121,7 +126,7 @@ class _DailyPageState extends State<DailyPage> {
                                         .day; // Check if the date is today
 
                             return GestureDetector(
-                              onTap: () => setState(() => _selectedDay = date),
+                              onTap: () => _onDateSelected(date),
                               child: Container(
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
@@ -353,5 +358,33 @@ class _DailyPageState extends State<DailyPage> {
     final now = DateTime.now();
     // Calculate months since January 2024
     return (now.year - 2024) * 12 + (now.month - 1);
+  }
+
+  void _onDateSelected(DateTime date) {
+    setState(() {
+      _selectedDay = date;
+    });
+
+    // Calculate scroll position for the selected week
+    final monthStart = DateTime(date.year, date.month, 1);
+    final firstWeekday = _getFirstWeekdayOfMonth(monthStart);
+    final selectedDayOffset = date.day - 1 + firstWeekday;
+    final weekNumber = selectedDayOffset ~/ 7;
+
+    final monthIndex = (date.year - 2024) * 12 + (date.month - 1);
+    final monthOffset = monthIndex * itemHeight;
+    final weekOffset = weekNumber * weekHeight;
+
+    // Calculate the position that will center the selected week
+    final screenHeight = MediaQuery.of(context).size.height;
+    final availableHeight = screenHeight - headerHeight - 65.0;
+    final targetPosition =
+        monthOffset + weekOffset - (availableHeight - weekHeight) / 2;
+
+    _scrollController.animateTo(
+      targetPosition,
+      duration: Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+    );
   }
 }
