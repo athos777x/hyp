@@ -116,8 +116,25 @@ class _DailyPageState extends State<DailyPage> {
                                       _getDaysInMonth(prevMonth);
                                   final prevMonthDay = daysInPrevMonth -
                                       (firstWeekday - index - 1);
-                                  return _buildDayContainer(prevMonthDay, false,
-                                      false, Colors.grey[600]);
+                                  final prevDate = DateTime(
+                                    prevMonth.year,
+                                    prevMonth.month,
+                                    prevMonthDay,
+                                  );
+                                  final isSelected = _selectedDay.year ==
+                                          prevDate.year &&
+                                      _selectedDay.month == prevDate.month &&
+                                      _selectedDay.day == prevDate.day;
+                                  final isToday = prevDate.year ==
+                                          DateTime.now().year &&
+                                      prevDate.month == DateTime.now().month &&
+                                      prevDate.day == DateTime.now().day;
+
+                                  return GestureDetector(
+                                    onTap: () => _onDateSelected(prevDate),
+                                    child: _buildDayContainer(prevMonthDay,
+                                        isSelected, isToday, Colors.grey[600]),
+                                  );
                                 }
 
                                 final dayIndex = index - firstWeekday;
@@ -125,10 +142,29 @@ class _DailyPageState extends State<DailyPage> {
                                     _getDaysInMonth(adjustedMonth);
 
                                 if (dayIndex >= daysInMonth) {
+                                  final nextMonth = DateTime(adjustedMonth.year,
+                                      adjustedMonth.month + 1);
                                   final nextMonthDay =
                                       dayIndex - daysInMonth + 1;
-                                  return _buildDayContainer(nextMonthDay, false,
-                                      false, Colors.grey[600]);
+                                  final nextDate = DateTime(
+                                    nextMonth.year,
+                                    nextMonth.month,
+                                    nextMonthDay,
+                                  );
+                                  final isSelected = _selectedDay.year ==
+                                          nextDate.year &&
+                                      _selectedDay.month == nextDate.month &&
+                                      _selectedDay.day == nextDate.day;
+                                  final isToday = nextDate.year ==
+                                          DateTime.now().year &&
+                                      nextDate.month == DateTime.now().month &&
+                                      nextDate.day == DateTime.now().day;
+
+                                  return GestureDetector(
+                                    onTap: () => _onDateSelected(nextDate),
+                                    child: _buildDayContainer(nextMonthDay,
+                                        isSelected, isToday, Colors.grey[600]),
+                                  );
                                 }
 
                                 final date = DateTime(
