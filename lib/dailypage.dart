@@ -7,7 +7,6 @@ class DailyPage extends StatefulWidget {
 
 class _DailyPageState extends State<DailyPage> {
   late DateTime _selectedDay;
-  late int _initialMonthIndex;
   final double itemHeight = 360.0;
   late ScrollController _scrollController;
 
@@ -20,12 +19,12 @@ class _DailyPageState extends State<DailyPage> {
   void initState() {
     super.initState();
     _selectedDay = DateTime.now();
-    _initialMonthIndex = _calculateInitialMonthIndex();
     _scrollController = ScrollController();
 
-    // Only scroll to the initial month, not the week
+    // Wait for the first frame to be rendered before scrolling
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _scrollController.jumpTo(_initialMonthIndex * itemHeight);
+      // Since container is expanded by default, use _scrollToSelectedWeek
+      _scrollToSelectedWeek();
     });
   }
 
@@ -369,12 +368,6 @@ class _DailyPageState extends State<DailyPage> {
     } else {
       return 'Today';
     }
-  }
-
-  int _calculateInitialMonthIndex() {
-    final now = DateTime.now();
-    // Calculate months since January 2024
-    return (now.year - 2024) * 12 + (now.month - 1);
   }
 
   void _onDateSelected(DateTime date) {
