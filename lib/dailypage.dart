@@ -20,8 +20,11 @@ class _DailyPageState extends State<DailyPage> {
     _selectedDay = DateTime.now(); // Set default to current date
     _initialMonthIndex =
         _calculateInitialMonthIndex(); // Calculate initial month index
-    _scrollController =
-        ScrollController(initialScrollOffset: _initialMonthIndex * itemHeight);
+    // Add a small delay to ensure proper scrolling after layout
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _scrollController.jumpTo(_initialMonthIndex * itemHeight);
+    });
+    _scrollController = ScrollController();
   }
 
   @override
@@ -348,6 +351,7 @@ class _DailyPageState extends State<DailyPage> {
 
   int _calculateInitialMonthIndex() {
     final now = DateTime.now();
-    return (now.year - 2023) * 12 + now.month - 1;
+    // Calculate months since January 2024
+    return (now.year - 2024) * 12 + (now.month - 1);
   }
 }
