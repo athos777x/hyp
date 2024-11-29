@@ -10,7 +10,7 @@ class _DefinitionsPageState extends State<DefinitionsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Center(
-        child: Text('Welcome to definitionpage'),
+        child: Text('Welcome to DefinitionsPage'),
       ),
     );
   }
