@@ -133,7 +133,7 @@ class _DailyPageState extends State<DailyPage> {
                                   return GestureDetector(
                                     onTap: () => _onDateSelected(prevDate),
                                     child: _buildDayContainer(prevMonthDay,
-                                        isSelected, isToday, Colors.grey[600]),
+                                        isSelected, isToday, Colors.grey[800]),
                                   );
                                 }
 
@@ -163,7 +163,7 @@ class _DailyPageState extends State<DailyPage> {
                                   return GestureDetector(
                                     onTap: () => _onDateSelected(nextDate),
                                     child: _buildDayContainer(nextMonthDay,
-                                        isSelected, isToday, Colors.grey[600]),
+                                        isSelected, isToday, Colors.grey[800]),
                                   );
                                 }
 
@@ -470,16 +470,17 @@ class _DailyPageState extends State<DailyPage> {
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         color: (isCollapsed && isRemainingDay)
-            ? Colors
-                .transparent // Make background transparent for all remaining days when collapsed
+            ? Colors.transparent
             : (isSelected
                 ? Color(0xFF4CAF50)
                 : isToday
                     ? const Color.fromARGB(255, 204, 204, 204)
-                    : Colors.white),
+                    : isRemainingDay
+                        ? Color.fromARGB(255, 235, 235,
+                            235) // Darker grey background for remaining days
+                        : Colors.white),
         boxShadow: [
-          if (!isCollapsed ||
-              !isRemainingDay) // Only show shadow when not collapsed or for current month days
+          if (!isCollapsed || !isRemainingDay)
             BoxShadow(
               color: Colors.black.withOpacity(0.05),
               blurRadius: 1,
