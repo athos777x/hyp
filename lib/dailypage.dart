@@ -424,7 +424,7 @@ class _DailyPageState extends State<DailyPage> {
 
     // Adjust the position to show the selected week at a better position
     final targetPosition =
-        basePosition - (visibleHeight * 0.25); // Changed from 0.3 to 0.25
+        basePosition - (visibleHeight * 0.10); // Changed from 0.22 to 0.23
 
     print('Day of Month: $dayOfMonth');
     print('Week Number: $weekNumber');
