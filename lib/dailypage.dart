@@ -458,27 +458,40 @@ class _DailyPageState extends State<DailyPage> {
 
   Widget _buildDayContainer(
       int day, bool isSelected, bool isToday, Color? textColor) {
+    final bool isCollapsed = _containerHeight == 65.0;
+    final bool isRemainingDay = textColor != null;
+
+    // Make all remaining days (including selected ones) transparent when collapsed
+    final effectiveTextColor = (isCollapsed && isRemainingDay)
+        ? Colors.transparent
+        : (isSelected ? Colors.white : (textColor ?? Colors.black87));
+
     return Container(
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: isSelected
-            ? Color(0xFF4CAF50)
-            : isToday
-                ? const Color.fromARGB(255, 204, 204, 204)
-                : Colors.white,
+        color: (isCollapsed && isRemainingDay)
+            ? Colors
+                .transparent // Make background transparent for all remaining days when collapsed
+            : (isSelected
+                ? Color(0xFF4CAF50)
+                : isToday
+                    ? const Color.fromARGB(255, 204, 204, 204)
+                    : Colors.white),
         boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 1,
-            spreadRadius: 1,
-          ),
+          if (!isCollapsed ||
+              !isRemainingDay) // Only show shadow when not collapsed or for current month days
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 1,
+              spreadRadius: 1,
+            ),
         ],
       ),
       child: Center(
         child: Text(
           '$day',
           style: TextStyle(
-            color: textColor ?? Colors.black87,
+            color: effectiveTextColor,
             fontSize: 14,
           ),
         ),
