@@ -8,8 +8,7 @@ class DailyPage extends StatefulWidget {
 class _DailyPageState extends State<DailyPage> {
   late DateTime _selectedDay;
   late int _initialMonthIndex;
-  final double itemHeight =
-      375.0; // Set an estimated height for each month item
+  final double itemHeight = 360.0;
   late ScrollController _scrollController;
 
   double _containerHeight = 708.0; // Set a default height for the container
@@ -65,106 +64,127 @@ class _DailyPageState extends State<DailyPage> {
               child: ListView.builder(
                 controller: _scrollController,
                 itemBuilder: (context, index) {
-                  // Calculate the month to display based on the index
-                  final monthOffset = index % 12; // Get the month offset
-                  final yearOffset = index ~/ 12; // Get the year offset
+                  final monthOffset = index % 12;
+                  final yearOffset = index ~/ 12;
                   final adjustedMonth =
                       DateTime(2024 + yearOffset, 1 + monthOffset);
 
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Month Header with Year
-                      Padding(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 16.0, vertical: 0.0),
-                        child: Text(
-                          '${_getMonthName(adjustedMonth)} ${adjustedMonth.year}',
-                          style: TextStyle(
-                            color: Colors.black87,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w500,
+                  return Container(
+                    height: itemHeight,
+                    margin: EdgeInsets.only(bottom: 32.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // Month Header with Year
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16.0, vertical: 0.0),
+                          child: Text(
+                            '${_getMonthName(adjustedMonth)} ${adjustedMonth.year}',
+                            style: TextStyle(
+                              color: Colors.black87,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
                         ),
-                      ),
 
-                      // Calendar Grid
-                      Padding(
-                        padding: const EdgeInsets.only(top: 0.0),
-                        child: GridView.builder(
-                          shrinkWrap: true,
-                          physics: NeverScrollableScrollPhysics(),
-                          padding: EdgeInsets.fromLTRB(16, 16, 16, 32),
-                          gridDelegate:
-                              SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 7,
-                            mainAxisSpacing: 8,
-                            crossAxisSpacing: 8,
-                            mainAxisExtent:
-                                weekHeight, // Use fixed height for rows
-                          ),
-                          itemCount: _getDaysInMonth(adjustedMonth) +
-                              _getFirstWeekdayOfMonth(adjustedMonth),
-                          itemBuilder: (context, index) {
-                            // Skip empty spaces at the beginning of the month
-                            final firstWeekday =
-                                _getFirstWeekdayOfMonth(adjustedMonth);
-                            if (index < firstWeekday) {
-                              return Container(); // Empty space
-                            }
+                        // Calendar Grid
+                        Expanded(
+                          child: Padding(
+                            padding: const EdgeInsets.only(top: 0.0),
+                            child: GridView.builder(
+                              shrinkWrap: true,
+                              physics: NeverScrollableScrollPhysics(),
+                              padding: EdgeInsets.fromLTRB(16, 16, 16, 32),
+                              gridDelegate:
+                                  SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 7,
+                                mainAxisSpacing: 8,
+                                crossAxisSpacing: 8,
+                                mainAxisExtent:
+                                    weekHeight, // Use fixed height for rows
+                              ),
+                              itemCount: _calculateGridItemCount(adjustedMonth),
+                              itemBuilder: (context, index) {
+                                final firstWeekday =
+                                    _getFirstWeekdayOfMonth(adjustedMonth);
+                                if (index < firstWeekday) {
+                                  return Container(); // Empty space for beginning of month
+                                }
 
-                            final dayIndex = index - firstWeekday;
-                            final date = DateTime(adjustedMonth.year,
-                                adjustedMonth.month, dayIndex + 1);
-                            final isSelected = _selectedDay.year == date.year &&
-                                _selectedDay.month == date.month &&
-                                _selectedDay.day == date.day;
-                            final isToday = date.year == DateTime.now().year &&
-                                date.month == DateTime.now().month &&
-                                date.day ==
-                                    DateTime.now()
-                                        .day; // Check if the date is today
+                                final dayIndex = index - firstWeekday;
+                                final daysInMonth =
+                                    _getDaysInMonth(adjustedMonth);
 
-                            return GestureDetector(
-                              onTap: () => _onDateSelected(date),
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: isSelected
-                                      ? Color(0xFF4CAF50) // Selected date color
-                                      : isToday
-                                          ? const Color.fromARGB(255, 204, 204,
-                                              204) // Current date color
-                                          : Colors.white, // Other dates color
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withOpacity(0.05),
-                                      blurRadius: 1,
-                                      spreadRadius: 1,
-                                    ),
-                                  ],
-                                ),
-                                child: Center(
-                                  child: Text(
-                                    '${dayIndex + 1}',
-                                    style: TextStyle(
+                                // Check if we've exceeded the days in the month
+                                if (dayIndex >= daysInMonth) {
+                                  return Container(); // Empty space for end of month
+                                }
+
+                                final date = DateTime(
+                                  adjustedMonth.year,
+                                  adjustedMonth.month,
+                                  dayIndex + 1,
+                                );
+                                final isSelected =
+                                    _selectedDay.year == date.year &&
+                                        _selectedDay.month == date.month &&
+                                        _selectedDay.day == date.day;
+                                final isToday = date.year ==
+                                        DateTime.now().year &&
+                                    date.month == DateTime.now().month &&
+                                    date.day ==
+                                        DateTime.now()
+                                            .day; // Check if the date is today
+
+                                return GestureDetector(
+                                  onTap: () => _onDateSelected(date),
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
                                       color: isSelected
-                                          ? Colors.white
-                                          : Colors.black87,
-                                      fontSize: 14,
+                                          ? Color(
+                                              0xFF4CAF50) // Selected date color
+                                          : isToday
+                                              ? const Color.fromARGB(
+                                                  255,
+                                                  204,
+                                                  204,
+                                                  204) // Current date color
+                                              : Colors
+                                                  .white, // Other dates color
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withOpacity(0.05),
+                                          blurRadius: 1,
+                                          spreadRadius: 1,
+                                        ),
+                                      ],
+                                    ),
+                                    child: Center(
+                                      child: Text(
+                                        '${dayIndex + 1}',
+                                        style: TextStyle(
+                                          color: isSelected
+                                              ? Colors.white
+                                              : Colors.black87,
+                                          fontSize: 14,
+                                        ),
+                                      ),
                                     ),
                                   ),
-                                ),
-                              ),
-                            );
-                          },
+                                );
+                              },
+                            ),
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   );
                 },
-                itemCount: (2026 - 2024 + 1) *
-                    12, // Total months from Jan 2024 to Dec 2026
+                itemCount: (2026 - 2024 + 1) * 12,
               ),
             ),
 
@@ -194,17 +214,14 @@ class _DailyPageState extends State<DailyPage> {
                                   if (details.delta.dy > 0) {
                                     // Swipe down
                                     setState(() {
-                                      // Collapse the height to a smaller value
-                                      _containerHeight =
-                                          65.0; // Set to a minimum height instead of 0
+                                      _containerHeight = 65.0;
                                     });
                                   } else if (details.delta.dy < 0 &&
                                       _containerHeight == 65.0) {
                                     // Swipe up
                                     setState(() {
-                                      // Expand the height back to the original value
-                                      _containerHeight =
-                                          708.0; // Set to original height
+                                      _containerHeight = 708.0;
+                                      _scrollToSelectedWeek();
                                     });
                                   }
                                 },
@@ -322,8 +339,8 @@ class _DailyPageState extends State<DailyPage> {
 
   int _getFirstWeekdayOfMonth(DateTime date) {
     final firstDayOfMonth = DateTime(date.year, date.month, 1);
-    // Convert Sunday (7) to 6 and shift all days by -1 to match Monday-based week
-    return (firstDayOfMonth.weekday - 1) % 7;
+    // Adjust weekday to make Monday = 0, Sunday = 6
+    return firstDayOfMonth.weekday % 7;
   }
 
   String _getDayName(DateTime date) {
@@ -365,26 +382,72 @@ class _DailyPageState extends State<DailyPage> {
       _selectedDay = date;
     });
 
-    // Calculate scroll position for the selected week
-    final monthStart = DateTime(date.year, date.month, 1);
+    // Only scroll to center the week if the container is expanded
+    if (_containerHeight > 65.0) {
+      _scrollToSelectedWeek();
+    }
+  }
+
+  void _scrollToSelectedWeek() {
+    final monthStart = DateTime(_selectedDay.year, _selectedDay.month, 1);
     final firstWeekday = _getFirstWeekdayOfMonth(monthStart);
-    final selectedDayOffset = date.day - 1 + firstWeekday;
-    final weekNumber = selectedDayOffset ~/ 7;
 
-    final monthIndex = (date.year - 2024) * 12 + (date.month - 1);
-    final monthOffset = monthIndex * itemHeight;
-    final weekOffset = weekNumber * weekHeight;
+    final dayOfMonth = _selectedDay.day;
+    final adjustedDay = dayOfMonth + firstWeekday - 1;
+    final weekNumber = (adjustedDay - 1) ~/ 7;
 
-    // Calculate the position that will center the selected week
-    final screenHeight = MediaQuery.of(context).size.height;
-    final availableHeight = screenHeight - headerHeight - 65.0;
+    final monthIndex =
+        (_selectedDay.year - 2024) * 12 + (_selectedDay.month - 1);
+
+    // Fine-tuned measurements
+    final monthHeaderHeight = 32.0;
+    final weekSpacing = 8.0;
+    final gridPadding = 16.0;
+    final monthSpacing = 32.0;
+
+    // Calculate total height of each month including spacing
+    final totalMonthHeight = itemHeight + monthSpacing;
+
+    // Calculate week position within the month
+    final weekPositionInMonth = (weekNumber * (weekHeight + weekSpacing)) +
+        monthHeaderHeight +
+        gridPadding;
+
+    // Calculate base scroll position
+    final basePosition = (monthIndex * totalMonthHeight) + weekPositionInMonth;
+
+    // Calculate visible area
+    final visibleHeight = MediaQuery.of(context).size.height -
+        headerHeight -
+        _containerHeight -
+        MediaQuery.of(context).padding.top;
+
+    // Adjust the position to show the selected week at a better position
     final targetPosition =
-        monthOffset + weekOffset - (availableHeight - weekHeight) / 2;
+        basePosition - (visibleHeight * 0.25); // Changed from 0.3 to 0.25
+
+    print('Day of Month: $dayOfMonth');
+    print('Week Number: $weekNumber');
+    print('Base Position: $basePosition');
+    print('Visible Height: $visibleHeight');
+    print('Target Position: $targetPosition');
 
     _scrollController.animateTo(
       targetPosition,
       duration: Duration(milliseconds: 300),
       curve: Curves.easeInOut,
     );
+  }
+
+  int _calculateGridItemCount(DateTime month) {
+    final daysInMonth = _getDaysInMonth(month);
+    final firstWeekday = _getFirstWeekdayOfMonth(month);
+    final totalDays = daysInMonth + firstWeekday;
+
+    // Calculate the number of rows needed and ensure we have enough space
+    final rows = ((totalDays + 6) / 7).ceil(); // Add 6 to ensure we round up
+
+    // Return total grid spaces (7 columns × number of rows)
+    return rows * 7;
   }
 }
