@@ -219,7 +219,7 @@ class _DailyPageState extends State<DailyPage> {
                     children: [
                       AnimatedContainer(
                         duration: Duration(
-                            milliseconds: 800), // Duration of the animation
+                            milliseconds: 500), // Duration of the animation
                         height: _containerHeight, // Use a variable for height
                         color: Colors.white, // Set the color to white
                         curve: Curves.easeInOut, // Animation curve
@@ -234,16 +234,12 @@ class _DailyPageState extends State<DailyPage> {
                                 onVerticalDragUpdate: (details) {
                                   if (details.delta.dy > 0) {
                                     // Swipe down
-                                    setState(() {
-                                      _containerHeight = 65.0;
-                                    });
+                                    _handleContainerHeightChange(65.0);
                                   } else if (details.delta.dy < 0 &&
                                       _containerHeight == 65.0) {
                                     // Swipe up
-                                    setState(() {
-                                      _containerHeight = 708.0;
-                                      _scrollToSelectedWeek();
-                                    });
+                                    _handleContainerHeightChange(708.0);
+                                    _scrollToSelectedWeek();
                                   }
                                 },
                                 child: Container(
@@ -471,38 +467,67 @@ class _DailyPageState extends State<DailyPage> {
     final bool isCollapsed = _containerHeight == 65.0;
     final bool isRemainingDay = textColor != null;
 
-    // Make all remaining days (including selected ones) transparent when collapsed
-    final effectiveTextColor = (isCollapsed && isRemainingDay)
-        ? Colors.transparent
-        : (isSelected ? Colors.white : (textColor ?? Colors.black87));
+    if (isRemainingDay) {
+      return AnimatedOpacity(
+        duration: Duration(milliseconds: 1200), // Quick fade in
+        curve: Curves.easeIn,
+        opacity: isCollapsed ? 0 : 1,
+        onEnd: () {
+          // We can't return a widget here, so we just use the callback for state changes if needed
+        },
+        child: isCollapsed
+            ? SizedBox()
+            : Container(
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: isSelected
+                      ? Color(0xFF4CAF50)
+                      : isToday
+                          ? const Color.fromARGB(255, 204, 204, 204)
+                          : Color.fromARGB(255, 235, 235, 235),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 1,
+                      spreadRadius: 1,
+                    ),
+                  ],
+                ),
+                child: Center(
+                  child: Text(
+                    '$day',
+                    style: TextStyle(
+                      color: isSelected ? Colors.white : textColor,
+                      fontSize: 14,
+                    ),
+                  ),
+                ),
+              ),
+      );
+    }
 
+    // Regular day container (non-remaining days)
     return Container(
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: (isCollapsed && isRemainingDay)
-            ? Colors.transparent
-            : (isSelected
-                ? Color(0xFF4CAF50)
-                : isToday
-                    ? const Color.fromARGB(255, 204, 204, 204)
-                    : isRemainingDay
-                        ? Color.fromARGB(255, 235, 235,
-                            235) // Darker grey background for remaining days
-                        : Colors.white),
+        color: isSelected
+            ? Color(0xFF4CAF50)
+            : isToday
+                ? const Color.fromARGB(255, 204, 204, 204)
+                : Colors.white,
         boxShadow: [
-          if (!isCollapsed || !isRemainingDay)
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 1,
-              spreadRadius: 1,
-            ),
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 1,
+            spreadRadius: 1,
+          ),
         ],
       ),
       child: Center(
         child: Text(
           '$day',
           style: TextStyle(
-            color: effectiveTextColor,
+            color: isSelected ? Colors.white : Colors.black87,
             fontSize: 14,
           ),
         ),
@@ -532,6 +557,23 @@ class _DailyPageState extends State<DailyPage> {
     if (currentYear >= _endYear) {
       setState(() {
         _endYear = currentYear + 1; // Always show one year ahead
+      });
+    }
+  }
+
+  void _handleContainerHeightChange(double newHeight) {
+    setState(() {
+      _containerHeight = newHeight;
+    });
+
+    // If expanding, wait for container animation to complete before showing remaining days
+    if (newHeight == 708.0) {
+      Future.delayed(Duration(milliseconds: 600), () {
+        if (mounted) {
+          setState(() {
+            // Trigger rebuild to show remaining days
+          });
+        }
       });
     }
   }
