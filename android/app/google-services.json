@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "109777712335",
+    "project_id": "hypapp-4ab37",
+    "storage_bucket": "hypapp-4ab37.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:109777712335:android:8e365a5491d4ab8aca33ba",
+        "android_client_info": {
+          "package_name": "com.example.hyp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCopOexdRbemS5iQf4CmXjiIq20P12yX0Q"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
