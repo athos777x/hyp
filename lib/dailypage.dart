@@ -407,9 +407,10 @@ class _DailyPageState extends State<DailyPage> {
     final monthStart = DateTime(_selectedDay.year, _selectedDay.month, 1);
     final firstWeekday = _getFirstWeekdayOfMonth(monthStart);
 
+    // Calculate which week the selected day belongs to
     final dayOfMonth = _selectedDay.day;
-    final adjustedDay = dayOfMonth + firstWeekday - 1;
-    final weekNumber = (adjustedDay - 1) ~/ 7;
+    // Changed this line to properly calculate the week
+    final weekNumber = ((dayOfMonth + firstWeekday - 1) / 7).floor();
 
     final monthIndex =
         (_selectedDay.year - _startYear) * 12 + (_selectedDay.month - 1);
