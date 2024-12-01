@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '/homepage.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class OnBoardingScreen extends StatefulWidget {
   const OnBoardingScreen({super.key});
@@ -11,6 +12,8 @@ class OnBoardingScreen extends StatefulWidget {
 class OnboardingScreenState extends State<OnBoardingScreen> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final TextEditingController _nameController = TextEditingController();
 
   final List<OnboardingPage> _pages = [
     OnboardingPage(
@@ -33,6 +36,22 @@ class OnboardingScreenState extends State<OnBoardingScreen> {
       buttonText: 'Start',
     ),
   ];
+
+  Future<void> _signInAnonymously() async {
+    try {
+      await _auth.signInAnonymously();
+      // You can store additional user data (like name) in Firebase here
+      // For example, using Cloud Firestore
+    } catch (e) {
+      print('Error signing in anonymously: $e');
+    }
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -80,6 +99,7 @@ class OnboardingScreenState extends State<OnBoardingScreen> {
                         const SizedBox(height: 20),
                         if (_pages[index].hasTextField)
                           TextField(
+                            controller: _nameController,
                             decoration: InputDecoration(
                               hintText: 'Your name',
                               border: OutlineInputBorder(
@@ -97,19 +117,23 @@ class OnboardingScreenState extends State<OnBoardingScreen> {
                         SizedBox(
                           width: double.infinity,
                           child: ElevatedButton(
-                            onPressed: () {
+                            onPressed: () async {
                               if (_currentPage < _pages.length - 1) {
                                 _pageController.nextPage(
                                   duration: const Duration(milliseconds: 300),
                                   curve: Curves.easeInOut,
                                 );
                               } else {
+                                // Sign in anonymously before navigating
+                                await _signInAnonymously();
                                 // Navigate to HomePage
-                                Navigator.of(context).pushReplacement(
-                                  MaterialPageRoute(
-                                    builder: (context) => const HomePage(),
-                                  ),
-                                );
+                                if (mounted) {
+                                  Navigator.of(context).pushReplacement(
+                                    MaterialPageRoute(
+                                      builder: (context) => const HomePage(),
+                                    ),
+                                  );
+                                }
                               }
                             },
                             style: ElevatedButton.styleFrom(
