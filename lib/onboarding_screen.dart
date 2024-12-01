@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '/homepage.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class OnBoardingScreen extends StatefulWidget {
   const OnBoardingScreen({super.key});
@@ -39,9 +40,19 @@ class OnboardingScreenState extends State<OnBoardingScreen> {
 
   Future<void> _signInAnonymously() async {
     try {
-      await _auth.signInAnonymously();
-      // You can store additional user data (like name) in Firebase here
-      // For example, using Cloud Firestore
+      // Sign in anonymously and get the user credential
+      final UserCredential userCredential = await _auth.signInAnonymously();
+
+      // Save the user's name to Firestore
+      if (_nameController.text.isNotEmpty) {
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(userCredential.user!.uid)
+            .set({
+          'name': _nameController.text.trim(),
+          'createdAt': FieldValue.serverTimestamp(),
+        });
+      }
     } catch (e) {
       print('Error signing in anonymously: $e');
     }

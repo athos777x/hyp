@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class SettingsPage extends StatefulWidget {
   @override
@@ -10,6 +12,49 @@ class _SettingsPageState extends State<SettingsPage> {
   bool reminderEnabled = true;
   bool notificationsEnabled = true;
   final TextEditingController _nameController = TextEditingController();
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserName();
+  }
+
+  Future<void> _loadUserName() async {
+    try {
+      final userId = _auth.currentUser?.uid;
+      if (userId != null) {
+        final userData = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(userId)
+            .get();
+
+        if (userData.exists && userData.data()?['name'] != null) {
+          setState(() {
+            _nameController.text = userData.data()!['name'];
+          });
+        }
+      }
+    } catch (e) {
+      print('Error loading user name: $e');
+    }
+  }
+
+  Future<void> _updateUserName() async {
+    try {
+      final userId = _auth.currentUser?.uid;
+      if (userId != null) {
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(userId)
+            .update({
+          'name': _nameController.text.trim(),
+        });
+      }
+    } catch (e) {
+      print('Error updating user name: $e');
+    }
+  }
 
   @override
   void dispose() {
@@ -72,6 +117,7 @@ class _SettingsPageState extends State<SettingsPage> {
                     border: InputBorder.none,
                     contentPadding: EdgeInsets.all(16),
                   ),
+                  onSubmitted: (_) => _updateUserName(),
                 ),
               ),
 
