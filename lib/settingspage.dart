@@ -23,16 +23,23 @@ class _SettingsPageState extends State<SettingsPage> {
   Future<void> _loadUserName() async {
     try {
       final userId = _auth.currentUser?.uid;
+      print('Current user ID: $userId');
+
       if (userId != null) {
         final userData = await FirebaseFirestore.instance
             .collection('users')
             .doc(userId)
             .get();
 
+        print('Firestore data: ${userData.data()}');
+
         if (userData.exists && userData.data()?['name'] != null) {
           setState(() {
             _nameController.text = userData.data()!['name'];
           });
+          print('Name loaded: ${_nameController.text}');
+        } else {
+          print('No user data found or name is null');
         }
       }
     } catch (e) {
@@ -94,31 +101,47 @@ class _SettingsPageState extends State<SettingsPage> {
                 ),
               ),
               SizedBox(height: 8),
-              Container(
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.grey.withOpacity(0.1),
-                      spreadRadius: 1,
-                      blurRadius: 4,
-                    ),
-                  ],
-                ),
-                child: TextField(
-                  controller: _nameController,
-                  decoration: InputDecoration(
-                    hintText: 'Your name',
-                    hintStyle: TextStyle(
-                      color: Colors.grey[400],
-                      fontSize: 14,
-                    ),
-                    border: InputBorder.none,
-                    contentPadding: EdgeInsets.all(16),
-                  ),
-                  onSubmitted: (_) => _updateUserName(),
-                ),
+              StreamBuilder<DocumentSnapshot>(
+                stream: FirebaseFirestore.instance
+                    .collection('users')
+                    .doc(_auth.currentUser?.uid)
+                    .snapshots(),
+                builder: (context, snapshot) {
+                  if (snapshot.hasError) {
+                    print('Error: ${snapshot.error}');
+                    return Text('Error loading name');
+                  }
+
+                  if (snapshot.hasData && snapshot.data != null) {
+                    final userData =
+                        snapshot.data!.data() as Map<String, dynamic>?;
+                    final name = userData?['name'] as String? ?? '';
+                    _nameController.text = name;
+
+                    print('Loaded name from stream: $name'); // Debug print
+
+                    return TextField(
+                      controller: _nameController,
+                      decoration: InputDecoration(
+                        hintText: 'Your name',
+                        hintStyle: TextStyle(
+                          color: Colors.grey[400],
+                          fontSize: 14,
+                        ),
+                        border: InputBorder.none,
+                        contentPadding: EdgeInsets.all(16),
+                      ),
+                      onChanged: (value) {
+                        setState(() {});
+                      },
+                      onSubmitted: (_) => _updateUserName(),
+                    );
+                  }
+
+                  return Center(
+                    child: CircularProgressIndicator(),
+                  );
+                },
               ),
 
               SizedBox(height: 24),

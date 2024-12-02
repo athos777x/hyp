@@ -40,10 +40,10 @@ class OnboardingScreenState extends State<OnBoardingScreen> {
 
   Future<void> _signInAnonymously() async {
     try {
-      // Sign in anonymously and get the user credential
       final UserCredential userCredential = await _auth.signInAnonymously();
 
-      // Save the user's name to Firestore
+      print('Signing in with name: ${_nameController.text}');
+
       if (_nameController.text.isNotEmpty) {
         await FirebaseFirestore.instance
             .collection('users')
@@ -52,6 +52,7 @@ class OnboardingScreenState extends State<OnBoardingScreen> {
           'name': _nameController.text.trim(),
           'createdAt': FieldValue.serverTimestamp(),
         });
+        print('Successfully saved name to Firestore');
       }
     } catch (e) {
       print('Error signing in anonymously: $e');
@@ -130,14 +131,22 @@ class OnboardingScreenState extends State<OnBoardingScreen> {
                           child: ElevatedButton(
                             onPressed: () async {
                               if (_currentPage < _pages.length - 1) {
+                                if (_currentPage == 0) {
+                                  if (_nameController.text.trim().isEmpty) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                          content:
+                                              Text('Please enter your name')),
+                                    );
+                                    return;
+                                  }
+                                  await _signInAnonymously();
+                                }
                                 _pageController.nextPage(
                                   duration: const Duration(milliseconds: 300),
                                   curve: Curves.easeInOut,
                                 );
                               } else {
-                                // Sign in anonymously before navigating
-                                await _signInAnonymously();
-                                // Navigate to HomePage
                                 if (mounted) {
                                   Navigator.of(context).pushReplacement(
                                     MaterialPageRoute(
