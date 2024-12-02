@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '/homepage.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class OnBoardingScreen extends StatefulWidget {
   const OnBoardingScreen({super.key});
@@ -57,6 +58,11 @@ class OnboardingScreenState extends State<OnBoardingScreen> {
     } catch (e) {
       print('Error signing in anonymously: $e');
     }
+  }
+
+  Future<void> _completeOnboarding() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('showOnboarding', false);
   }
 
   @override
@@ -147,6 +153,7 @@ class OnboardingScreenState extends State<OnBoardingScreen> {
                                   curve: Curves.easeInOut,
                                 );
                               } else {
+                                await _completeOnboarding();
                                 if (mounted) {
                                   Navigator.of(context).pushReplacement(
                                     MaterialPageRoute(
