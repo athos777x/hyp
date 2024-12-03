@@ -5,13 +5,45 @@ class Medication {
   final String time;
   bool taken;
   final Color color;
+  final DateTime? endDate; // Optional end date
+  int? remainingSupply; // Optional remaining supply count
+  int? remainingDays; // Optional remaining days
+  final DateTime startDate; // When the medication was added
 
   Medication({
     required this.name,
     required this.time,
     required this.taken,
     required this.color,
-  });
+    this.endDate,
+    this.remainingSupply,
+    this.remainingDays,
+    DateTime? startDate,
+  }) : startDate = startDate ?? DateTime.now();
+
+  bool get isActive {
+    final now = DateTime.now();
+
+    // Check end date if it exists
+    if (endDate != null && now.isAfter(endDate!)) {
+      return false;
+    }
+
+    // Check remaining supply if it exists
+    if (remainingSupply != null && remainingSupply! <= 0) {
+      return false;
+    }
+
+    // Check remaining days if it exists
+    if (remainingDays != null) {
+      final daysElapsed = now.difference(startDate).inDays;
+      if (daysElapsed >= remainingDays!) {
+        return false;
+      }
+    }
+
+    return true;
+  }
 
   // Updated method to handle both 24-hour and 12-hour time formats
   String get formattedTime {
@@ -41,6 +73,10 @@ class Medication {
       'time': time,
       'taken': taken,
       'color': color.value, // Convert Color to integer
+      'endDate': endDate?.toIso8601String(),
+      'remainingSupply': remainingSupply,
+      'remainingDays': remainingDays,
+      'startDate': startDate.toIso8601String(),
     };
   }
 
@@ -51,6 +87,12 @@ class Medication {
       time: json['time'],
       taken: json['taken'],
       color: Color(json['color']),
+      endDate: json['endDate'] != null ? DateTime.parse(json['endDate']) : null,
+      remainingSupply: json['remainingSupply'],
+      remainingDays: json['remainingDays'],
+      startDate: json['startDate'] != null
+          ? DateTime.parse(json['startDate'])
+          : DateTime.now(),
     );
   }
 }
