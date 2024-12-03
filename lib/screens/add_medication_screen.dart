@@ -28,6 +28,10 @@ class _AddMedicationScreenState extends State<AddMedicationScreen> {
   DateTime _endDate =
       DateTime.now().add(Duration(days: 1)); // Tomorrow by default
 
+  // Add these to your state variables
+  TextEditingController _daysAmountController = TextEditingController();
+  TextEditingController _supplyAmountController = TextEditingController();
+
   // Add this map for medication type to per options
   final Map<String, List<String>> _perOptionsMap = {
     'Tablets': ['pill', 'piece', 'mg', 'gr'],
@@ -649,28 +653,67 @@ class _AddMedicationScreenState extends State<AddMedicationScreen> {
           ),
           onTap: _showEndOptions,
         ),
-        ListTile(
-          title: Text('Date'),
-          trailing: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                _endDate.difference(DateTime.now()).inDays <= 1
-                    ? 'tomorrow'
-                    : '${_endDate.day}/${_endDate.month}/${_endDate.year}',
-                style: TextStyle(
-                  color: Colors.grey[600],
-                ),
+        if (_selectedEndOption == 'amount of days') ...[
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            child: TextFormField(
+              controller: _daysAmountController,
+              decoration: InputDecoration(
+                labelText: 'Number of days',
+                border: UnderlineInputBorder(),
               ),
-              Icon(
-                Icons.arrow_forward_ios,
-                size: 16,
-                color: Colors.grey[400],
-              ),
-            ],
+              keyboardType: TextInputType.number,
+            ),
           ),
-          onTap: _selectEndDate,
-        ),
+        ] else if (_selectedEndOption == 'medication supply') ...[
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                TextFormField(
+                  controller: _supplyAmountController,
+                  decoration: InputDecoration(
+                    labelText: 'Supply amount',
+                    border: UnderlineInputBorder(),
+                  ),
+                  keyboardType: TextInputType.number,
+                ),
+                SizedBox(height: 8),
+                Text(
+                  'The total cannot be less than one dose of medicine',
+                  style: TextStyle(
+                    color: Colors.orange[700],
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ] else if (_selectedEndOption == 'date') ...[
+          ListTile(
+            title: Text('Date'),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  _endDate.difference(DateTime.now()).inDays <= 1
+                      ? 'tomorrow'
+                      : '${_endDate.day}/${_endDate.month}/${_endDate.year}',
+                  style: TextStyle(
+                    color: Colors.grey[600],
+                  ),
+                ),
+                Icon(
+                  Icons.arrow_forward_ios,
+                  size: 16,
+                  color: Colors.grey[400],
+                ),
+              ],
+            ),
+            onTap: _selectEndDate,
+          ),
+        ],
       ],
     );
   }
@@ -700,6 +743,8 @@ class _AddMedicationScreenState extends State<AddMedicationScreen> {
   void dispose() {
     _nameController.dispose();
     _amountController.dispose();
+    _daysAmountController.dispose();
+    _supplyAmountController.dispose();
     super.dispose();
   }
 }
