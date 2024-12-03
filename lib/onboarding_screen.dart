@@ -146,6 +146,7 @@ class OnboardingScreenState extends State<OnBoardingScreen> {
                                     );
                                     return;
                                   }
+                                  FocusScope.of(context).unfocus();
                                   await _signInAnonymously();
                                 }
                                 _pageController.nextPage(
