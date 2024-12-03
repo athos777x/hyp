@@ -315,6 +315,15 @@ class _DailyPageState extends State<DailyPage> {
                                       horizontal: 16, vertical: 8),
                                   itemCount: _medications.length,
                                   itemBuilder: (context, index) {
+                                    // Sort medications by time before building the list
+                                    _medications.sort((a, b) {
+                                      final aTime =
+                                          _timeStringToDateTime(a.time);
+                                      final bTime =
+                                          _timeStringToDateTime(b.time);
+                                      return aTime.compareTo(bTime);
+                                    });
+
                                     final medication = _medications[index];
                                     return Container(
                                       margin: EdgeInsets.only(bottom: 8),
@@ -682,5 +691,25 @@ class _DailyPageState extends State<DailyPage> {
       // Save medications after adding new one
       await _medicationService.saveMedications(_medications);
     }
+  }
+
+  // Add this method to convert time string to comparable DateTime
+  DateTime _timeStringToDateTime(String timeStr) {
+    final now = DateTime.now();
+    final timeParts = timeStr.split(' ');
+    final time = timeParts[0].split(':');
+    int hour = int.parse(time[0]);
+    int minute = int.parse(time[1]);
+
+    // Handle AM/PM
+    if (timeParts.length > 1) {
+      if (timeParts[1] == 'PM' && hour != 12) {
+        hour += 12;
+      } else if (timeParts[1] == 'AM' && hour == 12) {
+        hour = 0;
+      }
+    }
+
+    return DateTime(now.year, now.month, now.day, hour, minute);
   }
 }

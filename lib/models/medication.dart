@@ -13,6 +13,19 @@ class Medication {
     required this.color,
   });
 
+  // Add this method to get formatted time for display
+  String get formattedTime {
+    final timeParts = time.split(':');
+    int hour = int.parse(timeParts[0]);
+    int minute = int.parse(timeParts[1]);
+
+    final period = hour >= 12 ? 'PM' : 'AM';
+    hour = hour > 12 ? hour - 12 : hour;
+    hour = hour == 0 ? 12 : hour;
+
+    return '$hour:${minute.toString().padLeft(2, '0')} $period';
+  }
+
   // Convert Medication to JSON
   Map<String, dynamic> toJson() {
     return {
