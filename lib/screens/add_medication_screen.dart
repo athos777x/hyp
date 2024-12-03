@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../dailypage.dart';
+import '../models/medication.dart';
 import 'dart:math';
 
 class AddMedicationScreen extends StatefulWidget {
@@ -19,6 +19,45 @@ class _AddMedicationScreenState extends State<AddMedicationScreen> {
   String _selectedEvery = 'Before meals';
   List<TimeOfDay> _doseTimes = [TimeOfDay.now()];
 
+  // Add this map for medication type to per options
+  final Map<String, List<String>> _perOptionsMap = {
+    'Tablets': ['pill', 'piece', 'mg', 'gr'],
+    'Capsules': ['capsule', 'piece', 'mg', 'gr'],
+    'Injection': [
+      'piece',
+      'ampoule',
+      'syringe',
+      'pen',
+      'ml',
+      'cub. cm.',
+      'mg',
+      'gr'
+    ],
+    'Procedures': ['time', 'inhalation', 'dose', 'suppository', 'enema'],
+    'Drops': ['drop', 'time', 'piece'],
+    'Liquid': ['cup', 'bottle', 'teaspoon', 'ml'],
+    'Ointment/Cream/Gel': ['dose', 'time', 'piece'],
+    'Spray': ['time', 'injection'],
+  };
+
+  @override
+  void initState() {
+    super.initState();
+    // Set initial per option based on default medication type
+    _selectedPer = _perOptionsMap[_selectedType]!.first;
+  }
+
+  // Add this method to update _selectedPer when medication type changes
+  void _updatePerOptions(String? medicationType) {
+    if (medicationType != null) {
+      setState(() {
+        _selectedType = medicationType;
+        // Set to first option of new medication type
+        _selectedPer = _perOptionsMap[medicationType]!.first;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -27,8 +66,16 @@ class _AddMedicationScreenState extends State<AddMedicationScreen> {
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.close, color: Colors.black),
-          onPressed: () => Navigator.pop(context),
+          icon: Icon(Icons.arrow_back_ios, color: Colors.black),
+          onPressed: () {
+            if (_currentStep > 1) {
+              setState(() {
+                _currentStep--;
+              });
+            } else {
+              Navigator.pop(context);
+            }
+          },
         ),
         title: Row(
           children: [
@@ -113,17 +160,22 @@ class _AddMedicationScreenState extends State<AddMedicationScreen> {
           decoration: InputDecoration(
             border: UnderlineInputBorder(),
           ),
-          items: ['Tablets', 'Capsules', 'Liquid']
+          items: [
+            'Tablets',
+            'Capsules',
+            'Injection',
+            'Procedures',
+            'Drops',
+            'Liquid',
+            'Ointment/Cream/Gel',
+            'Spray'
+          ]
               .map((type) => DropdownMenuItem(
                     value: type,
                     child: Text(type),
                   ))
               .toList(),
-          onChanged: (value) {
-            setState(() {
-              _selectedType = value!;
-            });
-          },
+          onChanged: _updatePerOptions,
         ),
         SizedBox(height: 24),
         TextFormField(
@@ -155,7 +207,7 @@ class _AddMedicationScreenState extends State<AddMedicationScreen> {
           decoration: InputDecoration(
             border: UnderlineInputBorder(),
           ),
-          items: ['piece', 'ml']
+          items: _perOptionsMap[_selectedType]!
               .map((type) => DropdownMenuItem(
                     value: type,
                     child: Text(type),

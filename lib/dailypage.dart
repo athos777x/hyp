@@ -1,20 +1,8 @@
 import 'package:flutter/material.dart';
 import 'dart:math';
 import 'screens/add_medication_screen.dart';
-
-class Medication {
-  final String name;
-  final String time;
-  final bool taken;
-  final Color color;
-
-  Medication({
-    required this.name,
-    required this.time,
-    required this.taken,
-    required this.color,
-  });
-}
+import 'services/medication_service.dart';
+import 'models/medication.dart';
 
 class DailyPage extends StatefulWidget {
   @override
@@ -34,6 +22,7 @@ class _DailyPageState extends State<DailyPage> {
   late int _startYear;
   late int _endYear;
 
+  final MedicationService _medicationService = MedicationService();
   List<Medication> _medications = [];
 
   @override
@@ -50,6 +39,15 @@ class _DailyPageState extends State<DailyPage> {
     // Wait for the first frame to be rendered before scrolling
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _scrollToSelectedWeek();
+    });
+
+    _loadMedications();
+  }
+
+  Future<void> _loadMedications() async {
+    final medications = await _medicationService.loadMedications();
+    setState(() {
+      _medications = medications;
     });
   }
 
@@ -369,16 +367,14 @@ class _DailyPageState extends State<DailyPage> {
                                                 Icons.circle_outlined,
                                                 color: Colors.grey[400],
                                               ),
-                                        onTap: () {
-                                          // Toggle medication taken status
+                                        onTap: () async {
                                           setState(() {
-                                            _medications[index] = Medication(
-                                              name: medication.name,
-                                              time: medication.time,
-                                              taken: !medication.taken,
-                                              color: medication.color,
-                                            );
+                                            medication.taken =
+                                                !medication.taken;
                                           });
+                                          // Save medications after updating taken status
+                                          await _medicationService
+                                              .saveMedications(_medications);
                                         },
                                       ),
                                     );
@@ -683,6 +679,8 @@ class _DailyPageState extends State<DailyPage> {
         // Add the new medication to the list
         _medications.add(result);
       });
+      // Save medications after adding new one
+      await _medicationService.saveMedications(_medications);
     }
   }
 }
