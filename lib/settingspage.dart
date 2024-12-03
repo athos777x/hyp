@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'onboarding_screen.dart';
 
 class SettingsPage extends StatefulWidget {
   @override
@@ -60,6 +62,43 @@ class _SettingsPageState extends State<SettingsPage> {
       }
     } catch (e) {
       print('Error updating user name: $e');
+    }
+  }
+
+  Future<void> _deleteAccount() async {
+    try {
+      final user = _auth.currentUser;
+      if (user != null) {
+        // Delete user data from Firestore
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .delete();
+
+        // Delete the Firebase Auth account
+        await user.delete();
+
+        // Reset onboarding flag
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setBool('showOnboarding', true);
+
+        // Navigate to onboarding screen
+        if (mounted) {
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(
+              builder: (context) => const OnBoardingScreen(),
+            ),
+            (route) => false,
+          );
+        }
+      }
+    } catch (e) {
+      print('Error deleting account: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Failed to delete account. Please try again.'),
+        ),
+      );
     }
   }
 
@@ -202,9 +241,33 @@ class _SettingsPageState extends State<SettingsPage> {
                 ),
                 child: ListTile(
                   onTap: () {
-                    // Handle delete account
+                    showDialog(
+                      context: context,
+                      builder: (context) => AlertDialog(
+                        title: const Text('Delete Account'),
+                        content: const Text(
+                          'Are you sure you want to delete your account? This action cannot be undone.',
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(context),
+                            child: const Text('Cancel'),
+                          ),
+                          TextButton(
+                            onPressed: () {
+                              Navigator.pop(context);
+                              _deleteAccount();
+                            },
+                            child: const Text(
+                              'Delete',
+                              style: TextStyle(color: Colors.red),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
                   },
-                  title: Text(
+                  title: const Text(
                     'Delete account',
                     style: TextStyle(
                       color: Colors.red,
