@@ -751,12 +751,12 @@ class _DailyPageState extends State<DailyPage> {
     return DateTime(now.year, now.month, now.day, hour, minute);
   }
 
-  // Add this method to determine time period
+  // Update this method to use the new time ranges
   String _getTimePeriod(DateTime time) {
     final hour = time.hour;
-    if (hour >= 5 && hour < 12) {
+    if (hour >= 0 && hour < 12) {
       return 'Morning';
-    } else if (hour >= 12 && hour < 17) {
+    } else if (hour >= 12 && hour < 18) {
       return 'Afternoon';
     } else {
       return 'Evening';
