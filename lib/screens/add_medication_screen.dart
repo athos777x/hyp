@@ -318,6 +318,13 @@ class _AddMedicationScreenState extends State<AddMedicationScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         ListTile(
+          title: Text('Days taken'),
+          trailing: Text('everyday'),
+          onTap: () {
+            // Handle days selection
+          },
+        ),
+        ListTile(
           title: Text('Start'),
           trailing: Text('today'),
           onTap: () {
@@ -329,13 +336,6 @@ class _AddMedicationScreenState extends State<AddMedicationScreen> {
           trailing: Text('date'),
           onTap: () {
             // Handle end date selection
-          },
-        ),
-        ListTile(
-          title: Text('Days taken'),
-          trailing: Text('everyday'),
-          onTap: () {
-            // Handle days selection
           },
         ),
       ],
