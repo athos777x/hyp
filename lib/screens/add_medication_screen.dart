@@ -249,6 +249,13 @@ class _AddMedicationScreenState extends State<AddMedicationScreen> {
   }
 
   Widget _buildStep2() {
+    // Sort the dose times
+    _doseTimes.sort((a, b) {
+      int aMinutes = a.hour * 60 + a.minute;
+      int bMinutes = b.hour * 60 + b.minute;
+      return aMinutes.compareTo(bMinutes);
+    });
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -262,6 +269,12 @@ class _AddMedicationScreenState extends State<AddMedicationScreen> {
                 onPressed: () {
                   setState(() {
                     _doseTimes.add(TimeOfDay.now());
+                    // Sort after adding new time
+                    _doseTimes.sort((a, b) {
+                      int aMinutes = a.hour * 60 + a.minute;
+                      int bMinutes = b.hour * 60 + b.minute;
+                      return aMinutes.compareTo(bMinutes);
+                    });
                   });
                 },
                 child: Text('+ More'),
@@ -284,6 +297,12 @@ class _AddMedicationScreenState extends State<AddMedicationScreen> {
                 if (time != null) {
                   setState(() {
                     _doseTimes[index] = time;
+                    // Sort after updating time
+                    _doseTimes.sort((a, b) {
+                      int aMinutes = a.hour * 60 + a.minute;
+                      int bMinutes = b.hour * 60 + b.minute;
+                      return aMinutes.compareTo(bMinutes);
+                    });
                   });
                 }
               },
