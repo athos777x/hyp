@@ -19,6 +19,14 @@ class _AddMedicationScreenState extends State<AddMedicationScreen> {
   String _selectedEvery = 'Before meals';
   List<TimeOfDay> _doseTimes = [TimeOfDay.now()];
   String _selectedDaysTaken = 'everyday';
+  String _selectedEndOption = 'date';
+
+  // Add these to your state variables
+  Set<String> _selectedDays = {};
+  final List<String> _daysOfWeek = ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'];
+  DateTime _startDate = DateTime.now();
+  DateTime _endDate =
+      DateTime.now().add(Duration(days: 1)); // Tomorrow by default
 
   // Add this map for medication type to per options
   final Map<String, List<String>> _perOptionsMap = {
@@ -80,6 +88,7 @@ class _AddMedicationScreenState extends State<AddMedicationScreen> {
                 onTap: () {
                   setState(() {
                     _selectedDaysTaken = 'everyday';
+                    _selectedDays.clear(); // Clear selected days
                   });
                   Navigator.pop(context);
                 },
@@ -202,6 +211,94 @@ class _AddMedicationScreenState extends State<AddMedicationScreen> {
         );
       },
     );
+  }
+
+  void _showEndOptions() {
+    showModalBottomSheet(
+      context: context,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(15)),
+      ),
+      builder: (BuildContext context) {
+        return Container(
+          padding: EdgeInsets.symmetric(vertical: 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children:
+                ['date', 'amount of days', 'medication supply', 'consistently']
+                    .map((type) => ListTile(
+                          title: Text(type),
+                          trailing: _selectedEndOption == type
+                              ? Icon(Icons.check, color: Color(0xFF4CAF50))
+                              : null,
+                          onTap: () {
+                            setState(() {
+                              _selectedEndOption = type;
+                            });
+                            Navigator.pop(context);
+                          },
+                        ))
+                    .toList(),
+          ),
+        );
+      },
+    );
+  }
+
+  // Add this method to handle start date selection
+  Future<void> _selectStartDate() async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: _startDate,
+      firstDate: DateTime.now().subtract(Duration(days: 365)),
+      lastDate: DateTime.now().add(Duration(days: 365 * 5)),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: ColorScheme.light(
+              primary: Color(0xFF4CAF50), // Header background color
+              onPrimary: Colors.white, // Header text color
+              onSurface: Colors.black, // Calendar text color
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+
+    if (picked != null && picked != _startDate) {
+      setState(() {
+        _startDate = picked;
+      });
+    }
+  }
+
+  // Add this method to handle end date selection
+  Future<void> _selectEndDate() async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: _endDate,
+      firstDate: _startDate, // Can't end before start date
+      lastDate: DateTime.now().add(Duration(days: 365 * 5)),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: ColorScheme.light(
+              primary: Color(0xFF4CAF50),
+              onPrimary: Colors.white,
+              onSurface: Colors.black,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+
+    if (picked != null && picked != _endDate) {
+      setState(() {
+        _endDate = picked;
+      });
+    }
   }
 
   @override
@@ -457,6 +554,47 @@ class _AddMedicationScreenState extends State<AddMedicationScreen> {
           ),
           onTap: _showDaysTakenOptions,
         ),
+        if (_selectedDaysTaken == 'selected days') ...[
+          Padding(
+            padding:
+                const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: _daysOfWeek.map((day) {
+                final isSelected = _selectedDays.contains(day);
+                return GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      if (isSelected) {
+                        _selectedDays.remove(day);
+                      } else {
+                        _selectedDays.add(day);
+                      }
+                    });
+                  },
+                  child: Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: isSelected ? Color(0xFF4CAF50) : Colors.grey[300],
+                    ),
+                    child: Center(
+                      child: Text(
+                        day,
+                        style: TextStyle(
+                          color: isSelected ? Colors.white : Colors.grey[600],
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+        ],
         SizedBox(height: 16),
         Padding(
           padding: const EdgeInsets.only(left: 16.0),
@@ -471,24 +609,67 @@ class _AddMedicationScreenState extends State<AddMedicationScreen> {
         ),
         ListTile(
           title: Text('Start'),
-          trailing: Text('today'),
-          onTap: () {
-            // Handle start date selection
-          },
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                _startDate == DateTime.now()
+                    ? 'today'
+                    : '${_startDate.day}/${_startDate.month}/${_startDate.year}',
+                style: TextStyle(
+                  color: Colors.grey[600],
+                ),
+              ),
+              Icon(
+                Icons.arrow_forward_ios,
+                size: 16,
+                color: Colors.grey[400],
+              ),
+            ],
+          ),
+          onTap: _selectStartDate,
         ),
         ListTile(
           title: Text('End'),
-          trailing: Text('date'),
-          onTap: () {
-            // Handle end date selection
-          },
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                _selectedEndOption,
+                style: TextStyle(
+                  color: Colors.grey[600],
+                ),
+              ),
+              Icon(
+                Icons.arrow_forward_ios,
+                size: 16,
+                color: Colors.grey[400],
+              ),
+            ],
+          ),
+          onTap: _showEndOptions,
         ),
         ListTile(
           title: Text('Date'),
-          trailing: Text('tomorrow'),
-          onTap: () {
-            // Handle date selection
-          },
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                _endDate.difference(DateTime.now()).inDays <= 1
+                    ? 'tomorrow'
+                    : '${_endDate.day}/${_endDate.month}/${_endDate.year}',
+                style: TextStyle(
+                  color: Colors.grey[600],
+                ),
+              ),
+              Icon(
+                Icons.arrow_forward_ios,
+                size: 16,
+                color: Colors.grey[400],
+              ),
+            ],
+          ),
+          onTap: _selectEndDate,
         ),
       ],
     );
