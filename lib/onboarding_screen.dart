@@ -135,7 +135,7 @@ class OnboardingScreenState extends State<OnBoardingScreen> {
                         SizedBox(
                           width: double.infinity,
                           child: ElevatedButton(
-                            onPressed: () async {
+                            onPressed: () {
                               if (_currentPage < _pages.length - 1) {
                                 if (_currentPage == 0) {
                                   if (_nameController.text.trim().isEmpty) {
@@ -147,14 +147,14 @@ class OnboardingScreenState extends State<OnBoardingScreen> {
                                     return;
                                   }
                                   FocusScope.of(context).unfocus();
-                                  await _signInAnonymously();
+                                  _signInAnonymously();
                                 }
                                 _pageController.nextPage(
                                   duration: const Duration(milliseconds: 300),
                                   curve: Curves.easeInOut,
                                 );
                               } else {
-                                await _completeOnboarding();
+                                _completeOnboarding();
                                 if (mounted) {
                                   Navigator.of(context).pushReplacement(
                                     MaterialPageRoute(
