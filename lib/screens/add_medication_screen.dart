@@ -18,6 +18,7 @@ class _AddMedicationScreenState extends State<AddMedicationScreen> {
   String _selectedPer = 'piece';
   String _selectedEvery = 'Before meals';
   List<TimeOfDay> _doseTimes = [TimeOfDay.now()];
+  String _selectedDaysTaken = 'everyday';
 
   // Add this map for medication type to per options
   final Map<String, List<String>> _perOptionsMap = {
@@ -56,6 +57,151 @@ class _AddMedicationScreenState extends State<AddMedicationScreen> {
         _selectedPer = _perOptionsMap[medicationType]!.first;
       });
     }
+  }
+
+  // Add this method to show days taken options
+  void _showDaysTakenOptions() {
+    showModalBottomSheet(
+      context: context,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(15)),
+      ),
+      builder: (BuildContext context) {
+        return Container(
+          padding: EdgeInsets.symmetric(vertical: 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                title: Text('everyday'),
+                trailing: _selectedDaysTaken == 'everyday'
+                    ? Icon(Icons.check, color: Color(0xFF4CAF50))
+                    : null,
+                onTap: () {
+                  setState(() {
+                    _selectedDaysTaken = 'everyday';
+                  });
+                  Navigator.pop(context);
+                },
+              ),
+              ListTile(
+                title: Text('selected days'),
+                trailing: _selectedDaysTaken == 'selected days'
+                    ? Icon(Icons.check, color: Color(0xFF4CAF50))
+                    : null,
+                onTap: () {
+                  setState(() {
+                    _selectedDaysTaken = 'selected days';
+                  });
+                  Navigator.pop(context);
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  // Add these methods to handle each dropdown
+  void _showMedicationTypeOptions() {
+    showModalBottomSheet(
+      context: context,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(15)),
+      ),
+      builder: (BuildContext context) {
+        return Container(
+          padding: EdgeInsets.symmetric(vertical: 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              'Tablets',
+              'Capsules',
+              'Injection',
+              'Procedures',
+              'Drops',
+              'Liquid',
+              'Ointment/Cream/Gel',
+              'Spray'
+            ]
+                .map((type) => ListTile(
+                      title: Text(type),
+                      trailing: _selectedType == type
+                          ? Icon(Icons.check, color: Color(0xFF4CAF50))
+                          : null,
+                      onTap: () {
+                        _updatePerOptions(type);
+                        Navigator.pop(context);
+                      },
+                    ))
+                .toList(),
+          ),
+        );
+      },
+    );
+  }
+
+  void _showPerOptions() {
+    showModalBottomSheet(
+      context: context,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(15)),
+      ),
+      builder: (BuildContext context) {
+        return Container(
+          padding: EdgeInsets.symmetric(vertical: 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: _perOptionsMap[_selectedType]!
+                .map((type) => ListTile(
+                      title: Text(type),
+                      trailing: _selectedPer == type
+                          ? Icon(Icons.check, color: Color(0xFF4CAF50))
+                          : null,
+                      onTap: () {
+                        setState(() {
+                          _selectedPer = type;
+                        });
+                        Navigator.pop(context);
+                      },
+                    ))
+                .toList(),
+          ),
+        );
+      },
+    );
+  }
+
+  void _showEveryOptions() {
+    showModalBottomSheet(
+      context: context,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(15)),
+      ),
+      builder: (BuildContext context) {
+        return Container(
+          padding: EdgeInsets.symmetric(vertical: 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: ['Before meals', 'After meals', 'With meals']
+                .map((type) => ListTile(
+                      title: Text(type),
+                      trailing: _selectedEvery == type
+                          ? Icon(Icons.check, color: Color(0xFF4CAF50))
+                          : null,
+                      onTap: () {
+                        setState(() {
+                          _selectedEvery = type;
+                        });
+                        Navigator.pop(context);
+                      },
+                    ))
+                .toList(),
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -155,27 +301,15 @@ class _AddMedicationScreenState extends State<AddMedicationScreen> {
             fontSize: 16,
           ),
         ),
-        DropdownButtonFormField<String>(
-          value: _selectedType,
-          decoration: InputDecoration(
-            border: UnderlineInputBorder(),
+        ListTile(
+          contentPadding: EdgeInsets.zero,
+          title: Text(_selectedType),
+          trailing: Icon(
+            Icons.arrow_forward_ios,
+            size: 16,
+            color: Colors.grey[400],
           ),
-          items: [
-            'Tablets',
-            'Capsules',
-            'Injection',
-            'Procedures',
-            'Drops',
-            'Liquid',
-            'Ointment/Cream/Gel',
-            'Spray'
-          ]
-              .map((type) => DropdownMenuItem(
-                    value: type,
-                    child: Text(type),
-                  ))
-              .toList(),
-          onChanged: _updatePerOptions,
+          onTap: _showMedicationTypeOptions,
         ),
         SizedBox(height: 24),
         TextFormField(
@@ -202,22 +336,15 @@ class _AddMedicationScreenState extends State<AddMedicationScreen> {
             fontSize: 16,
           ),
         ),
-        DropdownButtonFormField<String>(
-          value: _selectedPer,
-          decoration: InputDecoration(
-            border: UnderlineInputBorder(),
+        ListTile(
+          contentPadding: EdgeInsets.zero,
+          title: Text(_selectedPer),
+          trailing: Icon(
+            Icons.arrow_forward_ios,
+            size: 16,
+            color: Colors.grey[400],
           ),
-          items: _perOptionsMap[_selectedType]!
-              .map((type) => DropdownMenuItem(
-                    value: type,
-                    child: Text(type),
-                  ))
-              .toList(),
-          onChanged: (value) {
-            setState(() {
-              _selectedPer = value!;
-            });
-          },
+          onTap: _showPerOptions,
         ),
         SizedBox(height: 24),
         Text(
@@ -227,22 +354,15 @@ class _AddMedicationScreenState extends State<AddMedicationScreen> {
             fontSize: 16,
           ),
         ),
-        DropdownButtonFormField<String>(
-          value: _selectedEvery,
-          decoration: InputDecoration(
-            border: UnderlineInputBorder(),
+        ListTile(
+          contentPadding: EdgeInsets.zero,
+          title: Text(_selectedEvery),
+          trailing: Icon(
+            Icons.arrow_forward_ios,
+            size: 16,
+            color: Colors.grey[400],
           ),
-          items: ['Before meals', 'After meals', 'With meals']
-              .map((type) => DropdownMenuItem(
-                    value: type,
-                    child: Text(type),
-                  ))
-              .toList(),
-          onChanged: (value) {
-            setState(() {
-              _selectedEvery = value!;
-            });
-          },
+          onTap: _showEveryOptions,
         ),
       ],
     );
@@ -319,10 +439,35 @@ class _AddMedicationScreenState extends State<AddMedicationScreen> {
       children: [
         ListTile(
           title: Text('Days taken'),
-          trailing: Text('everyday'),
-          onTap: () {
-            // Handle days selection
-          },
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                _selectedDaysTaken,
+                style: TextStyle(
+                  color: Colors.grey[600],
+                ),
+              ),
+              Icon(
+                Icons.arrow_forward_ios,
+                size: 16,
+                color: Colors.grey[400],
+              ),
+            ],
+          ),
+          onTap: _showDaysTakenOptions,
+        ),
+        SizedBox(height: 16),
+        Padding(
+          padding: const EdgeInsets.only(left: 16.0),
+          child: Text(
+            'Course duration',
+            style: TextStyle(
+              color: Colors.grey[600],
+              fontSize: 12,
+              fontWeight: FontWeight.w400,
+            ),
+          ),
         ),
         ListTile(
           title: Text('Start'),
@@ -336,6 +481,13 @@ class _AddMedicationScreenState extends State<AddMedicationScreen> {
           trailing: Text('date'),
           onTap: () {
             // Handle end date selection
+          },
+        ),
+        ListTile(
+          title: Text('Date'),
+          trailing: Text('tomorrow'),
+          onTap: () {
+            // Handle date selection
           },
         ),
       ],
