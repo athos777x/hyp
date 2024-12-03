@@ -13,11 +13,19 @@ class Medication {
     required this.color,
   });
 
-  // Add this method to get formatted time for display
+  // Updated method to handle both 24-hour and 12-hour time formats
   String get formattedTime {
+    // First check if the time string already contains AM/PM
+    if (time.toUpperCase().contains('AM') ||
+        time.toUpperCase().contains('PM')) {
+      return time; // Return as-is if it's already in 12-hour format
+    }
+
+    // Handle 24-hour format
     final timeParts = time.split(':');
     int hour = int.parse(timeParts[0]);
-    int minute = int.parse(timeParts[1]);
+    int minute =
+        int.parse(timeParts[1].split(' ')[0]); // Remove any AM/PM if present
 
     final period = hour >= 12 ? 'PM' : 'AM';
     hour = hour > 12 ? hour - 12 : hour;

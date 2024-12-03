@@ -315,7 +315,7 @@ class _DailyPageState extends State<DailyPage> {
                                       horizontal: 16, vertical: 8),
                                   itemCount: _medications.length,
                                   itemBuilder: (context, index) {
-                                    // Sort medications by time before building the list
+                                    // Sort medications by time
                                     _medications.sort((a, b) {
                                       final aTime =
                                           _timeStringToDateTime(a.time);
@@ -324,68 +324,106 @@ class _DailyPageState extends State<DailyPage> {
                                       return aTime.compareTo(bTime);
                                     });
 
+                                    // Group medications by time period
                                     final medication = _medications[index];
-                                    return Container(
-                                      margin: EdgeInsets.only(bottom: 8),
-                                      decoration: BoxDecoration(
-                                        color: Colors.white,
-                                        borderRadius: BorderRadius.circular(12),
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color:
-                                                Colors.black.withOpacity(0.05),
-                                            blurRadius: 2,
-                                            spreadRadius: 1,
+                                    final currentTime =
+                                        _timeStringToDateTime(medication.time);
+                                    final currentPeriod =
+                                        _getTimePeriod(currentTime);
+
+                                    // Check if we need to show a divider
+                                    final showDivider = index == 0 ||
+                                        _getTimePeriod(_timeStringToDateTime(
+                                                _medications[index - 1]
+                                                    .time)) !=
+                                            currentPeriod;
+
+                                    return Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        if (showDivider) ...[
+                                          Padding(
+                                            padding: const EdgeInsets.only(
+                                              left: 8.0,
+                                              top: 16.0,
+                                              bottom: 8.0,
+                                            ),
+                                            child: Text(
+                                              currentPeriod,
+                                              style: TextStyle(
+                                                color: Colors.grey[600],
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                            ),
                                           ),
                                         ],
-                                      ),
-                                      child: ListTile(
-                                        leading: Container(
-                                          width: 40,
-                                          height: 40,
+                                        Container(
+                                          margin: EdgeInsets.only(bottom: 8),
                                           decoration: BoxDecoration(
-                                            color: medication.color,
-                                            borderRadius:
-                                                BorderRadius.circular(8),
-                                          ),
-                                          child: Icon(
-                                            Icons.medication,
                                             color: Colors.white,
-                                          ),
-                                        ),
-                                        title: Text(
-                                          medication.name,
-                                          style: TextStyle(
-                                            fontWeight: FontWeight.w600,
-                                            fontSize: 16,
-                                          ),
-                                        ),
-                                        subtitle: Text(
-                                          medication.time,
-                                          style: TextStyle(
-                                            color: Colors.grey[600],
-                                            fontSize: 14,
-                                          ),
-                                        ),
-                                        trailing: medication.taken
-                                            ? Icon(
-                                                Icons.check_circle,
-                                                color: Color(0xFF4CAF50),
-                                              )
-                                            : Icon(
-                                                Icons.circle_outlined,
-                                                color: Colors.grey[400],
+                                            borderRadius:
+                                                BorderRadius.circular(12),
+                                            boxShadow: [
+                                              BoxShadow(
+                                                color: Colors.black
+                                                    .withOpacity(0.05),
+                                                blurRadius: 2,
+                                                spreadRadius: 1,
                                               ),
-                                        onTap: () async {
-                                          setState(() {
-                                            medication.taken =
-                                                !medication.taken;
-                                          });
-                                          // Save medications after updating taken status
-                                          await _medicationService
-                                              .saveMedications(_medications);
-                                        },
-                                      ),
+                                            ],
+                                          ),
+                                          child: ListTile(
+                                            leading: Container(
+                                              width: 40,
+                                              height: 40,
+                                              decoration: BoxDecoration(
+                                                color: medication.color,
+                                                borderRadius:
+                                                    BorderRadius.circular(8),
+                                              ),
+                                              child: Icon(
+                                                Icons.medication,
+                                                color: Colors.white,
+                                              ),
+                                            ),
+                                            title: Text(
+                                              medication.name,
+                                              style: TextStyle(
+                                                fontWeight: FontWeight.w600,
+                                                fontSize: 16,
+                                              ),
+                                            ),
+                                            subtitle: Text(
+                                              medication.formattedTime,
+                                              style: TextStyle(
+                                                color: Colors.grey[600],
+                                                fontSize: 14,
+                                              ),
+                                            ),
+                                            trailing: medication.taken
+                                                ? Icon(
+                                                    Icons.check_circle,
+                                                    color: Color(0xFF4CAF50),
+                                                  )
+                                                : Icon(
+                                                    Icons.circle_outlined,
+                                                    color: Colors.grey[400],
+                                                  ),
+                                            onTap: () async {
+                                              setState(() {
+                                                medication.taken =
+                                                    !medication.taken;
+                                              });
+                                              // Save medications after updating taken status
+                                              await _medicationService
+                                                  .saveMedications(
+                                                      _medications);
+                                            },
+                                          ),
+                                        ),
+                                      ],
                                     );
                                   },
                                 ),
@@ -711,5 +749,17 @@ class _DailyPageState extends State<DailyPage> {
     }
 
     return DateTime(now.year, now.month, now.day, hour, minute);
+  }
+
+  // Add this method to determine time period
+  String _getTimePeriod(DateTime time) {
+    final hour = time.hour;
+    if (hour >= 5 && hour < 12) {
+      return 'Morning';
+    } else if (hour >= 12 && hour < 17) {
+      return 'Afternoon';
+    } else {
+      return 'Evening';
+    }
   }
 }
