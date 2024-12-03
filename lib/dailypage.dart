@@ -1,5 +1,20 @@
 import 'package:flutter/material.dart';
 import 'dart:math';
+import 'screens/add_medication_screen.dart';
+
+class Medication {
+  final String name;
+  final String time;
+  final bool taken;
+  final Color color;
+
+  Medication({
+    required this.name,
+    required this.time,
+    required this.taken,
+    required this.color,
+  });
+}
 
 class DailyPage extends StatefulWidget {
   @override
@@ -18,6 +33,8 @@ class _DailyPageState extends State<DailyPage> {
 
   late int _startYear;
   late int _endYear;
+
+  List<Medication> _medications = [];
 
   @override
   void initState() {
@@ -291,6 +308,84 @@ class _DailyPageState extends State<DailyPage> {
                                 ),
                               ],
                             ),
+
+                            // Add this - Medication List
+                            if (_containerHeight > 65.0) ...[
+                              Expanded(
+                                child: ListView.builder(
+                                  padding: EdgeInsets.symmetric(
+                                      horizontal: 16, vertical: 8),
+                                  itemCount: _medications.length,
+                                  itemBuilder: (context, index) {
+                                    final medication = _medications[index];
+                                    return Container(
+                                      margin: EdgeInsets.only(bottom: 8),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white,
+                                        borderRadius: BorderRadius.circular(12),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color:
+                                                Colors.black.withOpacity(0.05),
+                                            blurRadius: 2,
+                                            spreadRadius: 1,
+                                          ),
+                                        ],
+                                      ),
+                                      child: ListTile(
+                                        leading: Container(
+                                          width: 40,
+                                          height: 40,
+                                          decoration: BoxDecoration(
+                                            color: medication.color,
+                                            borderRadius:
+                                                BorderRadius.circular(8),
+                                          ),
+                                          child: Icon(
+                                            Icons.medication,
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                        title: Text(
+                                          medication.name,
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.w600,
+                                            fontSize: 16,
+                                          ),
+                                        ),
+                                        subtitle: Text(
+                                          medication.time,
+                                          style: TextStyle(
+                                            color: Colors.grey[600],
+                                            fontSize: 14,
+                                          ),
+                                        ),
+                                        trailing: medication.taken
+                                            ? Icon(
+                                                Icons.check_circle,
+                                                color: Color(0xFF4CAF50),
+                                              )
+                                            : Icon(
+                                                Icons.circle_outlined,
+                                                color: Colors.grey[400],
+                                              ),
+                                        onTap: () {
+                                          // Toggle medication taken status
+                                          setState(() {
+                                            _medications[index] = Medication(
+                                              name: medication.name,
+                                              time: medication.time,
+                                              taken: !medication.taken,
+                                              color: medication.color,
+                                            );
+                                          });
+                                        },
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ),
+                            ],
                           ],
                         ),
                       ),
@@ -308,9 +403,8 @@ class _DailyPageState extends State<DailyPage> {
                             child: IconButton(
                               icon: Icon(Icons.add,
                                   color: Colors.white), // "+" icon
-                              onPressed: () {
-                                // Add your onPressed functionality here
-                              },
+                              onPressed:
+                                  _addMedication, // Use the new method here
                             ),
                           ),
                         ),
@@ -574,6 +668,20 @@ class _DailyPageState extends State<DailyPage> {
             // Trigger rebuild to show remaining days
           });
         }
+      });
+    }
+  }
+
+  void _addMedication() async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => AddMedicationScreen()),
+    );
+
+    if (result != null) {
+      setState(() {
+        // Add the new medication to the list
+        _medications.add(result);
       });
     }
   }
