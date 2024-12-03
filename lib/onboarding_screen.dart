@@ -3,6 +3,8 @@ import '/homepage.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class OnBoardingScreen extends StatefulWidget {
   const OnBoardingScreen({super.key});
@@ -16,6 +18,8 @@ class OnboardingScreenState extends State<OnBoardingScreen> {
   int _currentPage = 0;
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final TextEditingController _nameController = TextEditingController();
+  final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
+      FlutterLocalNotificationsPlugin();
 
   final List<OnboardingPage> _pages = [
     OnboardingPage(
@@ -63,6 +67,75 @@ class OnboardingScreenState extends State<OnBoardingScreen> {
   Future<void> _completeOnboarding() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('showOnboarding', false);
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeNotifications();
+  }
+
+  Future<void> _initializeNotifications() async {
+    const AndroidInitializationSettings initializationSettingsAndroid =
+        AndroidInitializationSettings('@mipmap/ic_launcher');
+
+    const DarwinInitializationSettings initializationSettingsIOS =
+        DarwinInitializationSettings();
+
+    final InitializationSettings initializationSettings =
+        InitializationSettings(
+      android: initializationSettingsAndroid,
+      iOS: initializationSettingsIOS,
+    );
+
+    await flutterLocalNotificationsPlugin.initialize(
+      initializationSettings,
+      onDidReceiveNotificationResponse: (NotificationResponse response) {
+        // Handle notification tap
+        print('Notification tapped: ${response.payload}');
+      },
+    );
+  }
+
+  Future<void> _requestNotificationPermissions() async {
+    // For Android 13 and above
+    if (await Permission.notification.isDenied) {
+      await Permission.notification.request();
+    }
+
+    // For iOS
+    await flutterLocalNotificationsPlugin
+        .resolvePlatformSpecificImplementation<
+            IOSFlutterLocalNotificationsPlugin>()
+        ?.requestPermissions(
+          alert: true,
+          badge: true,
+          sound: true,
+        );
+
+    // Show a test notification
+    await _showTestNotification();
+  }
+
+  Future<void> _showTestNotification() async {
+    const AndroidNotificationDetails androidPlatformChannelSpecifics =
+        AndroidNotificationDetails(
+      'medication_reminders',
+      'Medication Reminders',
+      channelDescription: 'Reminders to take your medication',
+      importance: Importance.max,
+      priority: Priority.high,
+    );
+
+    const NotificationDetails platformChannelSpecifics =
+        NotificationDetails(android: androidPlatformChannelSpecifics);
+
+    await flutterLocalNotificationsPlugin.show(
+      0,
+      'Notifications Enabled',
+      'You will now receive medication reminders',
+      platformChannelSpecifics,
+    );
   }
 
   @override
@@ -148,6 +221,9 @@ class OnboardingScreenState extends State<OnBoardingScreen> {
                                   }
                                   FocusScope.of(context).unfocus();
                                   _signInAnonymously();
+                                } else if (_pages[_currentPage]
+                                    .showNotificationRequest) {
+                                  _requestNotificationPermissions();
                                 }
                                 _pageController.nextPage(
                                   duration: const Duration(milliseconds: 300),
