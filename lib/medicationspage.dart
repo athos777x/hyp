@@ -79,17 +79,35 @@ class _MedicationsPageState extends State<MedicationsPage> {
     final today = DateTime.now();
     final todayDate = DateTime(today.year, today.month, today.day);
 
+    // Group medications by name
+    Map<String, Medication> uniqueMeds = {};
+
+    for (var med in _medications) {
+      // Only add if not already present, keeping the first instance of each medication
+      if (!uniqueMeds.containsKey(med.name)) {
+        uniqueMeds[med.name] = med;
+      }
+    }
+
     // Filter medications based on active/completed status
-    final filteredMeds = _medications.where((med) {
+    final filteredMeds = uniqueMeds.values.where((med) {
       final startDate = DateTime(med.date.year, med.date.month, med.date.day);
       final endDate = med.endDate != null
           ? DateTime(med.endDate!.year, med.endDate!.month, med.endDate!.day)
           : startDate;
 
       if (isActiveTab) {
-        return !todayDate.isBefore(startDate) && !todayDate.isAfter(endDate);
+        // Active medications
+        if (med.daysTaken == 'consistently') {
+          return true; // Always show consistently taken medications in active
+        }
+        return !todayDate.isAfter(endDate); // Show if not past end date
       } else {
-        return todayDate.isAfter(endDate);
+        // Completed medications
+        if (med.daysTaken == 'consistently') {
+          return false; // Never show consistently taken medications in completed
+        }
+        return todayDate.isAfter(endDate); // Show if past end date
       }
     }).toList();
 
@@ -101,17 +119,14 @@ class _MedicationsPageState extends State<MedicationsPage> {
       );
     }
 
-    // Use ListView even for empty state to ensure scrollability
     return ListView.builder(
       padding: EdgeInsets.all(16),
-      // Always allow scrolling even when empty
       physics: const AlwaysScrollableScrollPhysics(),
       itemCount: filteredMeds.isEmpty ? 1 : filteredMeds.length,
       itemBuilder: (context, index) {
         if (filteredMeds.isEmpty) {
           return Container(
-            height: MediaQuery.of(context).size.height *
-                0.7, // Take up most of the screen
+            height: MediaQuery.of(context).size.height * 0.7,
             child: Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -180,17 +195,7 @@ class _MedicationsPageState extends State<MedicationsPage> {
                     ),
                     SizedBox(height: 4),
                     Text(
-                      isActiveTab
-                          ? _getMedicationStatus(medication)
-                          : _getCompletionReason(medication),
-                      style: TextStyle(
-                        color: Colors.grey[600],
-                        fontSize: 14,
-                      ),
-                    ),
-                    SizedBox(height: 4),
-                    Text(
-                      'Time: ${medication.time}',
+                      _getMedicationRule(medication),
                       style: TextStyle(
                         color: Colors.grey[600],
                         fontSize: 14,
@@ -204,6 +209,80 @@ class _MedicationsPageState extends State<MedicationsPage> {
         );
       },
     );
+  }
+
+  String _getMedicationRule(Medication medication) {
+    final today = DateTime.now();
+    final todayDate = DateTime(today.year, today.month, today.day);
+    final startDate = DateTime(
+      medication.date.year,
+      medication.date.month,
+      medication.date.day,
+    );
+
+    // For consistently taken medications (maintenance)
+    if (medication.daysTaken == 'consistently') {
+      return 'Maintenance medication (taken daily)';
+    }
+
+    // For medications with specific end options
+    switch (medication.selectedEndOption) {
+      case 'date':
+        if (medication.endDate != null) {
+          final endDate = DateTime(
+            medication.endDate!.year,
+            medication.endDate!.month,
+            medication.endDate!.day,
+          );
+          if (todayDate.isAfter(endDate)) {
+            return 'Completed on ${endDate.day}/${endDate.month}/${endDate.year}';
+          } else {
+            return 'Until ${endDate.day}/${endDate.month}/${endDate.year}';
+          }
+        }
+        break;
+
+      case 'amount of days':
+        if (medication.daysAmount != null) {
+          final totalDays = int.parse(medication.daysAmount!);
+          final endDate = startDate.add(Duration(days: totalDays - 1));
+
+          if (todayDate.isAfter(endDate)) {
+            return 'Completed after $totalDays days';
+          } else {
+            final remainingDays = endDate.difference(todayDate).inDays + 1;
+            return '$remainingDays days remaining of $totalDays days';
+          }
+        }
+        break;
+
+      case 'medication supply':
+        if (medication.supplyAmount != null) {
+          final totalSupply = int.parse(medication.supplyAmount!);
+          final dosesPerDay = medication.doseTimes?.length ?? 1;
+          final totalDays = totalSupply ~/ dosesPerDay;
+          final endDate = startDate.add(Duration(days: totalDays - 1));
+
+          if (todayDate.isAfter(endDate)) {
+            return 'Completed (supply exhausted)';
+          } else {
+            final remainingDays = endDate.difference(todayDate).inDays + 1;
+            final remainingSupply = (remainingDays * dosesPerDay);
+            return '$remainingSupply doses remaining of $totalSupply';
+          }
+        }
+        break;
+    }
+
+    // For medications with specific days
+    if (medication.daysTaken == 'selected days' &&
+        medication.selectedDays != null) {
+      final days = medication.selectedDays!.join(', ');
+      return 'Taken on: $days';
+    }
+
+    // Default case for everyday medications
+    return 'Taken daily';
   }
 
   @override
