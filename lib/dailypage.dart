@@ -787,7 +787,8 @@ class _DailyPageState extends State<DailyPage> {
 
     if (result != null) {
       setState(() {
-        _medications.add(result);
+        // result is now a List<Medication>
+        _medications.addAll(result);
       });
       await _medicationService.saveMedications(_medications);
     }

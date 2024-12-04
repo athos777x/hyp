@@ -738,9 +738,6 @@ class _AddMedicationScreenState extends State<AddMedicationScreen> {
     } else {
       // Create and return the medication
       if (_formKey.currentState!.validate()) {
-        // Format time string
-        String timeStr = _doseTimes.first.format(context);
-
         // Get the end date based on selected option
         DateTime? endDate;
         if (_selectedEndOption == 'date') {
@@ -754,16 +751,19 @@ class _AddMedicationScreenState extends State<AddMedicationScreen> {
           endDate = DateTime(_startDate.year + 10);
         }
 
-        Navigator.pop(
-          context,
-          Medication(
+        // Create a list of medications, one for each dose time
+        final medications = _doseTimes.map((doseTime) {
+          return Medication(
             name: _nameController.text,
-            time: timeStr,
+            time: doseTime.format(context),
             color: Colors.primaries[Random().nextInt(Colors.primaries.length)],
-            date: _startDate, // Use start date instead of selectedDate
-            endDate: endDate, // Include the end date
-          ),
-        );
+            date: _startDate,
+            endDate: endDate,
+          );
+        }).toList();
+
+        // Return the list of medications instead of a single medication
+        Navigator.pop(context, medications);
       }
     }
   }

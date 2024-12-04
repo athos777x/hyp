@@ -22,4 +22,10 @@ class MedicationService {
     final medicationList = jsonDecode(medicationJson) as List;
     return medicationList.map((med) => Medication.fromJson(med)).toList();
   }
+
+  // Clear medications from SharedPreferences
+  Future<void> clearMedications() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_key);
+  }
 }

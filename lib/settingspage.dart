@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'onboarding_screen.dart';
+import 'services/medication_service.dart';
 
 class SettingsPage extends StatefulWidget {
   @override
@@ -15,6 +16,7 @@ class _SettingsPageState extends State<SettingsPage> {
   bool notificationsEnabled = true;
   final TextEditingController _nameController = TextEditingController();
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  final MedicationService _medicationService = MedicationService();
 
   @override
   void initState() {
@@ -74,6 +76,9 @@ class _SettingsPageState extends State<SettingsPage> {
             .collection('users')
             .doc(user.uid)
             .delete();
+
+        // Clear all medications from SharedPreferences
+        await _medicationService.clearMedications();
 
         // Delete the Firebase Auth account
         await user.delete();
