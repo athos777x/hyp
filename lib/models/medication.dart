@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 class Medication {
   final String name;
   final DateTime date;
-  final DateTime? endDate;
+  DateTime? endDate;
   final String time;
   final Color color;
   bool taken;

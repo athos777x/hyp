@@ -827,29 +827,112 @@ class _AddMedicationScreenState extends State<AddMedicationScreen> {
           int supplyAmount = int.tryParse(_supplyAmountController.text) ?? 0;
           int dosesPerDay = _doseTimes.length; // Number of doses per day
 
-          if (supplyAmount < dosesPerDay) {
+          if (supplyAmount < 1) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text(
-                    'Supply amount cannot be less than daily doses (${dosesPerDay})'),
+                content: Text('Supply amount must be at least 1'),
                 backgroundColor: Colors.red,
               ),
             );
             return;
           }
 
-          // Calculate number of days the supply will last
-          int daysSupply = (supplyAmount / dosesPerDay).floor();
+          // Calculate full days and remaining doses
+          int fullDays = supplyAmount ~/ dosesPerDay; // Integer division
+          int remainingDoses = supplyAmount % dosesPerDay;
 
           if (_selectedDaysTaken == 'everyday') {
-            // For everyday option, simply add the calculated days
-            endDate = _startDate.add(Duration(days: daysSupply - 1));
+            // For everyday option
+            endDate = _startDate.add(Duration(days: fullDays));
+
+            // Create medications list with correct number of doses for each day
+            final medications = <Medication>[];
+
+            // Add medications for full days
+            for (int day = 0; day <= fullDays - 1; day++) {
+              final currentDate = _startDate.add(Duration(days: day));
+              medications.addAll(_doseTimes.map((doseTime) => Medication(
+                    name: _nameController.text,
+                    time: doseTime.format(context),
+                    color: Colors
+                        .primaries[Random().nextInt(Colors.primaries.length)],
+                    date: currentDate,
+                    endDate: endDate,
+                    daysTaken: _selectedDaysTaken,
+                    selectedDays: null,
+                  )));
+            }
+
+            // Add remaining doses for the last partial day if any
+            if (remainingDoses > 0) {
+              final lastDate = _startDate.add(Duration(days: fullDays));
+              // Only add the number of remaining doses, using the earliest time slots
+              for (int i = 0; i < remainingDoses; i++) {
+                medications.add(Medication(
+                  name: _nameController.text,
+                  time: _doseTimes[i].format(context),
+                  color: Colors
+                      .primaries[Random().nextInt(Colors.primaries.length)],
+                  date: lastDate,
+                  endDate:
+                      lastDate, // End date is same as last date for partial day
+                  daysTaken: _selectedDaysTaken,
+                  selectedDays: null,
+                ));
+              }
+            }
+
+            Navigator.pop(context, medications);
+            return;
           } else if (_selectedDaysTaken == 'selected days' &&
               _selectedDays.isNotEmpty) {
-            // For selected days, calculate how many weeks needed
-            int dosesPerWeek = _selectedDays.length;
-            int totalDays = ((daysSupply * 7) / dosesPerWeek).ceil();
-            endDate = _startDate.add(Duration(days: totalDays - 1));
+            // Create medications list
+            final medications = <Medication>[];
+            int totalDosesUsed = 0;
+
+            // Process one day at a time until we use all supplies
+            int currentDay = 0;
+            while (totalDosesUsed < supplyAmount) {
+              final currentDate = _startDate.add(Duration(days: currentDay));
+              final currentDayName = _daysOfWeek[currentDate.weekday % 7];
+
+              if (_selectedDays.contains(currentDayName)) {
+                // Calculate remaining doses for this day
+                int dosesForThisDay =
+                    min(dosesPerDay, supplyAmount - totalDosesUsed);
+
+                // Add doses for this day
+                for (int i = 0; i < dosesForThisDay; i++) {
+                  medications.add(Medication(
+                    name: _nameController.text,
+                    time: _doseTimes[i].format(context),
+                    color: Colors
+                        .primaries[Random().nextInt(Colors.primaries.length)],
+                    date: currentDate,
+                    endDate:
+                        currentDate, // Set end date to the same as current date for partial days
+                    daysTaken: _selectedDaysTaken,
+                    selectedDays: _selectedDays.toList(),
+                  ));
+                  totalDosesUsed++;
+                }
+
+                // If this was a full day, set the end date for all medications on this day
+                if (dosesForThisDay == dosesPerDay) {
+                  for (var med in medications.where((m) =>
+                      m.date.year == currentDate.year &&
+                      m.date.month == currentDate.month &&
+                      m.date.day == currentDate.day)) {
+                    med.endDate = medications
+                        .last.date; // Set end date to the last medication date
+                  }
+                }
+              }
+              currentDay++;
+            }
+
+            Navigator.pop(context, medications);
+            return;
           }
         } else if (_selectedEndOption == 'consistently') {
           endDate = DateTime(_startDate.year + 10);
