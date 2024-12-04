@@ -744,8 +744,49 @@ class _AddMedicationScreenState extends State<AddMedicationScreen> {
           endDate = _endDate;
         } else if (_selectedEndOption == 'amount of days' &&
             _daysAmountController.text.isNotEmpty) {
-          endDate = _startDate
-              .add(Duration(days: int.parse(_daysAmountController.text) - 1));
+          if (_selectedDaysTaken == 'selected days' &&
+              _selectedDays.isNotEmpty) {
+            // Calculate how many weeks needed to get the required doses
+            int requiredDoses = int.parse(_daysAmountController.text);
+            int dosesPerWeek = _selectedDays.length;
+
+            // Calculate full weeks needed
+            int fullWeeksNeeded = (requiredDoses / dosesPerWeek).floor();
+            // Calculate remaining doses
+            int remainingDoses = requiredDoses % dosesPerWeek;
+
+            // Calculate total days needed (7 days per full week + days for remaining doses)
+            int daysNeeded = (fullWeeksNeeded * 7);
+
+            if (remainingDoses > 0) {
+              // For remaining doses, find how many additional days needed
+              List<String> sortedDays = _selectedDays.toList()..sort();
+              int startDayIndex = _daysOfWeek.indexOf(sortedDays.first);
+              int lastDoseIndex = -1;
+
+              // Find the day index of the last required dose
+              int doseCount = 0;
+              for (int i = 0; i < 7 && doseCount < remainingDoses; i++) {
+                int currentDayIndex = (startDayIndex + i) % 7;
+                if (_selectedDays.contains(_daysOfWeek[currentDayIndex])) {
+                  lastDoseIndex = currentDayIndex;
+                  doseCount++;
+                }
+              }
+
+              if (lastDoseIndex >= startDayIndex) {
+                daysNeeded += (lastDoseIndex - startDayIndex + 1);
+              } else {
+                daysNeeded += (7 - startDayIndex + lastDoseIndex + 1);
+              }
+            }
+
+            endDate = _startDate.add(Duration(days: daysNeeded - 1));
+          } else {
+            // For 'everyday' option, simply add the number of days minus 1
+            endDate = _startDate
+                .add(Duration(days: int.parse(_daysAmountController.text) - 1));
+          }
         } else if (_selectedEndOption == 'consistently') {
           endDate = DateTime(_startDate.year + 10);
         }
