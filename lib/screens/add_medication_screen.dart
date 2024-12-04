@@ -745,7 +745,7 @@ class _AddMedicationScreenState extends State<AddMedicationScreen> {
         } else if (_selectedEndOption == 'amount of days' &&
             _daysAmountController.text.isNotEmpty) {
           endDate = _startDate
-              .add(Duration(days: int.parse(_daysAmountController.text)));
+              .add(Duration(days: int.parse(_daysAmountController.text) - 1));
         } else if (_selectedEndOption == 'consistently') {
           endDate = DateTime(_startDate.year + 10);
         }
