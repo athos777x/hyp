@@ -747,7 +747,6 @@ class _AddMedicationScreenState extends State<AddMedicationScreen> {
           endDate = _startDate
               .add(Duration(days: int.parse(_daysAmountController.text)));
         } else if (_selectedEndOption == 'consistently') {
-          // For consistent medication, set a far future date
           endDate = DateTime(_startDate.year + 10);
         }
 
@@ -759,10 +758,13 @@ class _AddMedicationScreenState extends State<AddMedicationScreen> {
             color: Colors.primaries[Random().nextInt(Colors.primaries.length)],
             date: _startDate,
             endDate: endDate,
+            daysTaken: _selectedDaysTaken,
+            selectedDays: _selectedDaysTaken == 'selected days'
+                ? _selectedDays.toList()
+                : null,
           );
         }).toList();
 
-        // Return the list of medications instead of a single medication
         Navigator.pop(context, medications);
       }
     }

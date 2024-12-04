@@ -7,6 +7,8 @@ class Medication {
   final String time;
   final Color color;
   bool taken;
+  final List<String>? selectedDays;
+  final String daysTaken;
 
   Medication({
     required this.name,
@@ -15,6 +17,8 @@ class Medication {
     required this.time,
     required this.color,
     this.taken = false,
+    this.selectedDays,
+    this.daysTaken = 'everyday',
   });
 
   String get formattedTime => time;
@@ -26,6 +30,8 @@ class Medication {
         'time': time,
         'color': color.value,
         'taken': taken,
+        'selectedDays': selectedDays,
+        'daysTaken': daysTaken,
       };
 
   factory Medication.fromJson(Map<String, dynamic> json) => Medication(
@@ -36,5 +42,9 @@ class Medication {
         time: json['time'],
         color: Color(json['color']),
         taken: json['taken'] ?? false,
+        selectedDays: json['selectedDays'] != null
+            ? List<String>.from(json['selectedDays'])
+            : null,
+        daysTaken: json['daysTaken'] ?? 'everyday',
       );
 }

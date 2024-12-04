@@ -67,7 +67,7 @@ class _DailyPageState extends State<DailyPage> {
                 crossAxisSpacing: 8,
                 shrinkWrap: true,
                 physics: NeverScrollableScrollPhysics(),
-                children: ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU']
+                children: ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA']
                     .map((day) => Center(
                           child: Text(
                             day,
@@ -333,12 +333,23 @@ class _DailyPageState extends State<DailyPage> {
                                               med.endDate!.month,
                                               med.endDate!.day,
                                             )
-                                          : startDate; // If no end date, use start date
+                                          : startDate;
 
-                                      // Return true if selected date is within range (inclusive)
-                                      return !selectedDate
-                                              .isBefore(startDate) &&
-                                          !selectedDate.isAfter(endDate);
+                                      // Check if the date is within range
+                                      final isWithinDateRange =
+                                          !selectedDate.isBefore(startDate) &&
+                                              !selectedDate.isAfter(endDate);
+
+                                      // Check if it should be shown on this day of the week
+                                      final isCorrectDay = med.daysTaken ==
+                                              'everyday' ||
+                                          (med.daysTaken == 'selected days' &&
+                                              med.selectedDays?.contains(
+                                                      _getDayAbbreviation(
+                                                          selectedDate)) ==
+                                                  true);
+
+                                      return isWithinDateRange && isCorrectDay;
                                     }).toList();
 
                                     // Sort medications by time
@@ -555,21 +566,22 @@ class _DailyPageState extends State<DailyPage> {
 
   int _getFirstWeekdayOfMonth(DateTime date) {
     final firstDayOfMonth = DateTime(date.year, date.month, 1);
-    // Adjust weekday to make Monday = 0, Sunday = 6
+    // Convert to Sunday = 0, Saturday = 6
     return firstDayOfMonth.weekday % 7;
   }
 
   String _getDayName(DateTime date) {
     final days = [
-      'Sunday',
       'Monday',
       'Tuesday',
       'Wednesday',
       'Thursday',
       'Friday',
-      'Saturday'
+      'Saturday',
+      'Sunday'
     ];
-    return days[date.weekday - 1];
+    // Adjust for Sunday being 7 in DateTime.weekday
+    return days[date.weekday == 7 ? 6 : date.weekday - 1];
   }
 
   String _getDateStatus() {
@@ -824,5 +836,10 @@ class _DailyPageState extends State<DailyPage> {
     } else {
       return 'Evening';
     }
+  }
+
+  String _getDayAbbreviation(DateTime date) {
+    final days = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'];
+    return days[date.weekday % 7];
   }
 }
