@@ -518,9 +518,33 @@ class _AddMedicationScreenState extends State<AddMedicationScreen> {
             }
             return ListTile(
               title: Text('Dose ${index + 1}'),
-              trailing: Text(
-                _doseTimes[index].format(context),
-                style: TextStyle(color: Colors.grey[600]),
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    _doseTimes[index].format(context),
+                    style: TextStyle(color: Colors.grey[600]),
+                  ),
+                  // Only show delete button if there's more than one dose
+                  if (_doseTimes.length > 1) ...[
+                    SizedBox(width: 12),
+                    GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          _doseTimes.removeAt(index);
+                        });
+                      },
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 8),
+                        child: Icon(
+                          Icons.remove_circle_outline,
+                          color: Colors.red,
+                          size: 18,
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
               ),
               onTap: () async {
                 final TimeOfDay? time = await showTimePicker(
