@@ -495,20 +495,30 @@ class _AddMedicationScreenState extends State<AddMedicationScreen> {
         ListView.builder(
           shrinkWrap: true,
           physics: NeverScrollableScrollPhysics(),
-          itemCount: _doseTimes.length + 1,
+          itemCount: _doseTimes.length + (_doseTimes.length < 10 ? 1 : 0),
           itemBuilder: (context, index) {
             if (index == _doseTimes.length) {
               return TextButton(
                 onPressed: () {
-                  setState(() {
-                    _doseTimes.add(TimeOfDay.now());
-                    // Sort after adding new time
-                    _doseTimes.sort((a, b) {
-                      int aMinutes = a.hour * 60 + a.minute;
-                      int bMinutes = b.hour * 60 + b.minute;
-                      return aMinutes.compareTo(bMinutes);
+                  if (_doseTimes.length < 10) {
+                    setState(() {
+                      _doseTimes.add(TimeOfDay.now());
+                      // Sort after adding new time
+                      _doseTimes.sort((a, b) {
+                        int aMinutes = a.hour * 60 + a.minute;
+                        int bMinutes = b.hour * 60 + b.minute;
+                        return aMinutes.compareTo(bMinutes);
+                      });
                     });
-                  });
+                  } else {
+                    // Show a message when trying to add more than 10 doses
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Maximum 10 doses allowed'),
+                        duration: Duration(seconds: 2),
+                      ),
+                    );
+                  }
                 },
                 child: Text('+ More'),
                 style: TextButton.styleFrom(
