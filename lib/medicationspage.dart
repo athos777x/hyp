@@ -26,7 +26,17 @@ class _MedicationsPageState extends State<MedicationsPage> {
   }
 
   List<Widget> _buildActiveMedications() {
-    final activeMeds = _medications.where((med) => med.isActive).toList();
+    final today = DateTime.now();
+    final todayDate = DateTime(today.year, today.month, today.day);
+
+    final activeMeds = _medications.where((med) {
+      final startDate = DateTime(med.date.year, med.date.month, med.date.day);
+      final endDate = med.endDate != null
+          ? DateTime(med.endDate!.year, med.endDate!.month, med.endDate!.day)
+          : startDate;
+
+      return !todayDate.isBefore(startDate) && !todayDate.isAfter(endDate);
+    }).toList();
 
     if (activeMeds.isEmpty) {
       return [
@@ -56,7 +66,16 @@ class _MedicationsPageState extends State<MedicationsPage> {
   }
 
   List<Widget> _buildCompletedMedications() {
-    final completedMeds = _medications.where((med) => !med.isActive).toList();
+    final today = DateTime.now();
+    final todayDate = DateTime(today.year, today.month, today.day);
+
+    final completedMeds = _medications.where((med) {
+      final endDate = med.endDate != null
+          ? DateTime(med.endDate!.year, med.endDate!.month, med.endDate!.day)
+          : DateTime(med.date.year, med.date.month, med.date.day);
+
+      return todayDate.isAfter(endDate);
+    }).toList();
 
     if (completedMeds.isEmpty) {
       return [
@@ -86,47 +105,47 @@ class _MedicationsPageState extends State<MedicationsPage> {
   }
 
   String _getMedicationStatus(Medication medication) {
-    final List<String> status = [];
+    final now = DateTime.now();
+    final medicationDate = DateTime(
+      medication.date.year,
+      medication.date.month,
+      medication.date.day,
+    );
+    final todayDate = DateTime(
+      now.year,
+      now.month,
+      now.day,
+    );
 
-    if (medication.endDate != null) {
-      final daysLeft = medication.endDate!.difference(DateTime.now()).inDays;
-      status.add('$daysLeft days left');
+    if (medicationDate.isAtSameMomentAs(todayDate)) {
+      return medication.taken ? 'Taken' : 'Not taken';
+    } else if (medicationDate.isBefore(todayDate)) {
+      return 'Past medication';
+    } else {
+      return 'Future medication';
     }
-
-    if (medication.remainingSupply != null) {
-      status.add('${medication.remainingSupply} pills left');
-    }
-
-    if (medication.remainingDays != null) {
-      final daysElapsed =
-          DateTime.now().difference(medication.startDate).inDays;
-      final daysLeft = medication.remainingDays! - daysElapsed;
-      status.add('$daysLeft days of treatment left');
-    }
-
-    return status.isEmpty ? 'Active' : status.join(' • ');
   }
 
   String _getCompletionReason(Medication medication) {
     final now = DateTime.now();
+    final medicationDate = DateTime(
+      medication.date.year,
+      medication.date.month,
+      medication.date.day,
+    );
+    final todayDate = DateTime(
+      now.year,
+      now.month,
+      now.day,
+    );
 
-    if (medication.endDate != null && now.isAfter(medication.endDate!)) {
-      return 'End date reached';
+    if (medicationDate.isBefore(todayDate)) {
+      return medication.taken ? 'Completed' : 'Missed';
+    } else if (medicationDate.isAfter(todayDate)) {
+      return 'Scheduled';
+    } else {
+      return medication.taken ? 'Taken today' : 'Not taken yet';
     }
-
-    if (medication.remainingSupply != null &&
-        medication.remainingSupply! <= 0) {
-      return 'Supply depleted';
-    }
-
-    if (medication.remainingDays != null) {
-      final daysElapsed = now.difference(medication.startDate).inDays;
-      if (daysElapsed >= medication.remainingDays!) {
-        return 'Treatment completed';
-      }
-    }
-
-    return 'Completed';
   }
 
   Widget _buildMedicationCard({

@@ -310,13 +310,39 @@ class _DailyPageState extends State<DailyPage> {
                             // Add this - Medication List
                             if (_containerHeight > 65.0) ...[
                               Expanded(
-                                child: ListView.builder(
-                                  padding: EdgeInsets.symmetric(
-                                      horizontal: 16, vertical: 8),
-                                  itemCount: _medications.length,
-                                  itemBuilder: (context, index) {
+                                child: Builder(
+                                  builder: (context) {
+                                    // Filter medications for selected date
+                                    final selectedDate = DateTime(
+                                      _selectedDay.year,
+                                      _selectedDay.month,
+                                      _selectedDay.day,
+                                    );
+
+                                    final medicationsForDay =
+                                        _medications.where((med) {
+                                      final startDate = DateTime(
+                                        med.date.year,
+                                        med.date.month,
+                                        med.date.day,
+                                      );
+
+                                      final endDate = med.endDate != null
+                                          ? DateTime(
+                                              med.endDate!.year,
+                                              med.endDate!.month,
+                                              med.endDate!.day,
+                                            )
+                                          : startDate; // If no end date, use start date
+
+                                      // Return true if selected date is within range (inclusive)
+                                      return !selectedDate
+                                              .isBefore(startDate) &&
+                                          !selectedDate.isAfter(endDate);
+                                    }).toList();
+
                                     // Sort medications by time
-                                    _medications.sort((a, b) {
+                                    medicationsForDay.sort((a, b) {
                                       final aTime =
                                           _timeStringToDateTime(a.time);
                                       final bTime =
@@ -324,106 +350,142 @@ class _DailyPageState extends State<DailyPage> {
                                       return aTime.compareTo(bTime);
                                     });
 
-                                    // Group medications by time period
-                                    final medication = _medications[index];
-                                    final currentTime =
-                                        _timeStringToDateTime(medication.time);
-                                    final currentPeriod =
-                                        _getTimePeriod(currentTime);
-
-                                    // Check if we need to show a divider
-                                    final showDivider = index == 0 ||
-                                        _getTimePeriod(_timeStringToDateTime(
-                                                _medications[index - 1]
-                                                    .time)) !=
-                                            currentPeriod;
-
-                                    return Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        if (showDivider) ...[
-                                          Padding(
-                                            padding: const EdgeInsets.only(
-                                              left: 8.0,
-                                              top: 16.0,
-                                              bottom: 8.0,
+                                    if (medicationsForDay.isEmpty) {
+                                      return Center(
+                                        child: Column(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          children: [
+                                            Icon(
+                                              Icons.medication_outlined,
+                                              size: 48,
+                                              color: Colors.grey[400],
                                             ),
-                                            child: Text(
-                                              currentPeriod,
+                                            SizedBox(height: 16),
+                                            Text(
+                                              'No medications for this day',
                                               style: TextStyle(
                                                 color: Colors.grey[600],
-                                                fontSize: 12,
-                                                fontWeight: FontWeight.w500,
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                        Container(
-                                          margin: EdgeInsets.only(bottom: 8),
-                                          decoration: BoxDecoration(
-                                            color: Colors.white,
-                                            borderRadius:
-                                                BorderRadius.circular(12),
-                                            boxShadow: [
-                                              BoxShadow(
-                                                color: Colors.black
-                                                    .withOpacity(0.05),
-                                                blurRadius: 2,
-                                                spreadRadius: 1,
-                                              ),
-                                            ],
-                                          ),
-                                          child: ListTile(
-                                            leading: Container(
-                                              width: 40,
-                                              height: 40,
-                                              decoration: BoxDecoration(
-                                                color: medication.color,
-                                                borderRadius:
-                                                    BorderRadius.circular(8),
-                                              ),
-                                              child: Icon(
-                                                Icons.medication,
-                                                color: Colors.white,
-                                              ),
-                                            ),
-                                            title: Text(
-                                              medication.name,
-                                              style: TextStyle(
-                                                fontWeight: FontWeight.w600,
                                                 fontSize: 16,
                                               ),
                                             ),
-                                            subtitle: Text(
-                                              medication.formattedTime,
-                                              style: TextStyle(
-                                                color: Colors.grey[600],
-                                                fontSize: 14,
+                                          ],
+                                        ),
+                                      );
+                                    }
+
+                                    return ListView.builder(
+                                      padding: EdgeInsets.symmetric(
+                                          horizontal: 16, vertical: 8),
+                                      itemCount: medicationsForDay.length,
+                                      itemBuilder: (context, index) {
+                                        final medication =
+                                            medicationsForDay[index];
+                                        final currentTime =
+                                            _timeStringToDateTime(
+                                                medication.time);
+                                        final currentPeriod =
+                                            _getTimePeriod(currentTime);
+
+                                        final showDivider = index == 0 ||
+                                            _getTimePeriod(
+                                                    _timeStringToDateTime(
+                                                        medicationsForDay[
+                                                                index - 1]
+                                                            .time)) !=
+                                                currentPeriod;
+
+                                        return Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            if (showDivider) ...[
+                                              Padding(
+                                                padding: const EdgeInsets.only(
+                                                  left: 8.0,
+                                                  top: 16.0,
+                                                  bottom: 8.0,
+                                                ),
+                                                child: Text(
+                                                  currentPeriod,
+                                                  style: TextStyle(
+                                                    color: Colors.grey[600],
+                                                    fontSize: 12,
+                                                    fontWeight: FontWeight.w500,
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                            Container(
+                                              margin:
+                                                  EdgeInsets.only(bottom: 8),
+                                              decoration: BoxDecoration(
+                                                color: Colors.white,
+                                                borderRadius:
+                                                    BorderRadius.circular(12),
+                                                boxShadow: [
+                                                  BoxShadow(
+                                                    color: Colors.black
+                                                        .withOpacity(0.05),
+                                                    blurRadius: 2,
+                                                    spreadRadius: 1,
+                                                  ),
+                                                ],
+                                              ),
+                                              child: ListTile(
+                                                leading: Container(
+                                                  width: 40,
+                                                  height: 40,
+                                                  decoration: BoxDecoration(
+                                                    color: medication.color,
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            8),
+                                                  ),
+                                                  child: Icon(
+                                                    Icons.medication,
+                                                    color: Colors.white,
+                                                  ),
+                                                ),
+                                                title: Text(
+                                                  medication.name,
+                                                  style: TextStyle(
+                                                    fontWeight: FontWeight.w600,
+                                                    fontSize: 16,
+                                                  ),
+                                                ),
+                                                subtitle: Text(
+                                                  medication.formattedTime,
+                                                  style: TextStyle(
+                                                    color: Colors.grey[600],
+                                                    fontSize: 14,
+                                                  ),
+                                                ),
+                                                trailing: medication.taken
+                                                    ? Icon(
+                                                        Icons.check_circle,
+                                                        color:
+                                                            Color(0xFF4CAF50),
+                                                      )
+                                                    : Icon(
+                                                        Icons.circle_outlined,
+                                                        color: Colors.grey[400],
+                                                      ),
+                                                onTap: () async {
+                                                  setState(() {
+                                                    medication.taken =
+                                                        !medication.taken;
+                                                  });
+                                                  // Save medications after updating taken status
+                                                  await _medicationService
+                                                      .saveMedications(
+                                                          _medications);
+                                                },
                                               ),
                                             ),
-                                            trailing: medication.taken
-                                                ? Icon(
-                                                    Icons.check_circle,
-                                                    color: Color(0xFF4CAF50),
-                                                  )
-                                                : Icon(
-                                                    Icons.circle_outlined,
-                                                    color: Colors.grey[400],
-                                                  ),
-                                            onTap: () async {
-                                              setState(() {
-                                                medication.taken =
-                                                    !medication.taken;
-                                              });
-                                              // Save medications after updating taken status
-                                              await _medicationService
-                                                  .saveMedications(
-                                                      _medications);
-                                            },
-                                          ),
-                                        ),
-                                      ],
+                                          ],
+                                        );
+                                      },
                                     );
                                   },
                                 ),
@@ -718,15 +780,15 @@ class _DailyPageState extends State<DailyPage> {
   void _addMedication() async {
     final result = await Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => AddMedicationScreen()),
+      MaterialPageRoute(
+        builder: (context) => AddMedicationScreen(selectedDate: _selectedDay),
+      ),
     );
 
     if (result != null) {
       setState(() {
-        // Add the new medication to the list
         _medications.add(result);
       });
-      // Save medications after adding new one
       await _medicationService.saveMedications(_medications);
     }
   }

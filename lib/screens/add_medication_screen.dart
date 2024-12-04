@@ -3,6 +3,13 @@ import '../models/medication.dart';
 import 'dart:math';
 
 class AddMedicationScreen extends StatefulWidget {
+  final DateTime selectedDate;
+
+  const AddMedicationScreen({
+    Key? key,
+    required this.selectedDate,
+  }) : super(key: key);
+
   @override
   _AddMedicationScreenState createState() => _AddMedicationScreenState();
 }
@@ -10,6 +17,7 @@ class AddMedicationScreen extends StatefulWidget {
 class _AddMedicationScreenState extends State<AddMedicationScreen> {
   int _currentStep = 1;
   final _formKey = GlobalKey<FormState>();
+  late DateTime _startDate;
 
   // Form controllers
   final _nameController = TextEditingController();
@@ -24,7 +32,6 @@ class _AddMedicationScreenState extends State<AddMedicationScreen> {
   // Add these to your state variables
   Set<String> _selectedDays = {};
   final List<String> _daysOfWeek = ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'];
-  DateTime _startDate = DateTime.now();
   DateTime _endDate =
       DateTime.now().add(Duration(days: 1)); // Tomorrow by default
 
@@ -56,6 +63,11 @@ class _AddMedicationScreenState extends State<AddMedicationScreen> {
   @override
   void initState() {
     super.initState();
+    // Initialize _startDate with the selectedDate from daily page
+    _startDate = widget.selectedDate;
+    // Set _endDate to be one day after start date by default
+    _endDate = _startDate.add(Duration(days: 1));
+
     // Set initial per option based on default medication type
     _selectedPer = _perOptionsMap[_selectedType]!.first;
   }
@@ -726,13 +738,30 @@ class _AddMedicationScreenState extends State<AddMedicationScreen> {
     } else {
       // Create and return the medication
       if (_formKey.currentState!.validate()) {
+        // Format time string
+        String timeStr = _doseTimes.first.format(context);
+
+        // Get the end date based on selected option
+        DateTime? endDate;
+        if (_selectedEndOption == 'date') {
+          endDate = _endDate;
+        } else if (_selectedEndOption == 'amount of days' &&
+            _daysAmountController.text.isNotEmpty) {
+          endDate = _startDate
+              .add(Duration(days: int.parse(_daysAmountController.text)));
+        } else if (_selectedEndOption == 'consistently') {
+          // For consistent medication, set a far future date
+          endDate = DateTime(_startDate.year + 10);
+        }
+
         Navigator.pop(
           context,
           Medication(
             name: _nameController.text,
-            time: _doseTimes.first.format(context),
-            taken: false,
+            time: timeStr,
             color: Colors.primaries[Random().nextInt(Colors.primaries.length)],
+            date: _startDate, // Use start date instead of selectedDate
+            endDate: endDate, // Include the end date
           ),
         );
       }
