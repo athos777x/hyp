@@ -780,42 +780,24 @@ class _AddMedicationScreenState extends State<AddMedicationScreen> {
             _daysAmountController.text.isNotEmpty) {
           if (_selectedDaysTaken == 'selected days' &&
               _selectedDays.isNotEmpty) {
-            // Calculate how many weeks needed to get the required doses
+            // Calculate how many actual days needed to get the required number of doses
             int requiredDoses = int.parse(_daysAmountController.text);
-            int dosesPerWeek = _selectedDays.length;
+            int currentDay = 0;
+            int doseCount = 0;
 
-            // Calculate full weeks needed
-            int fullWeeksNeeded = (requiredDoses / dosesPerWeek).floor();
-            // Calculate remaining doses
-            int remainingDoses = requiredDoses % dosesPerWeek;
+            while (doseCount < requiredDoses) {
+              final currentDate = _startDate.add(Duration(days: currentDay));
+              final currentDayName = _daysOfWeek[currentDate.weekday % 7];
 
-            // Calculate total days needed (7 days per full week + days for remaining doses)
-            int daysNeeded = (fullWeeksNeeded * 7);
-
-            if (remainingDoses > 0) {
-              // For remaining doses, find how many additional days needed
-              List<String> sortedDays = _selectedDays.toList()..sort();
-              int startDayIndex = _daysOfWeek.indexOf(sortedDays.first);
-              int lastDoseIndex = -1;
-
-              // Find the day index of the last required dose
-              int doseCount = 0;
-              for (int i = 0; i < 7 && doseCount < remainingDoses; i++) {
-                int currentDayIndex = (startDayIndex + i) % 7;
-                if (_selectedDays.contains(_daysOfWeek[currentDayIndex])) {
-                  lastDoseIndex = currentDayIndex;
-                  doseCount++;
+              if (_selectedDays.contains(currentDayName)) {
+                doseCount++;
+                if (doseCount == requiredDoses) {
+                  endDate = currentDate;
+                  break;
                 }
               }
-
-              if (lastDoseIndex >= startDayIndex) {
-                daysNeeded += (lastDoseIndex - startDayIndex + 1);
-              } else {
-                daysNeeded += (7 - startDayIndex + lastDoseIndex + 1);
-              }
+              currentDay++;
             }
-
-            endDate = _startDate.add(Duration(days: daysNeeded - 1));
           } else {
             // For 'everyday' option, simply add the number of days minus 1
             endDate = _startDate
@@ -938,7 +920,7 @@ class _AddMedicationScreenState extends State<AddMedicationScreen> {
           endDate = DateTime(_startDate.year + 10);
         }
 
-        // Create a list of medications, one for each dose time
+        // Create medications list with correct number of doses for each day
         final medications = _doseTimes.map((doseTime) {
           return Medication(
             name: _nameController.text,
