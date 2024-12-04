@@ -11,6 +11,7 @@ class _MedicationsPageState extends State<MedicationsPage> {
   bool isActiveTab = true;
   final MedicationService _medicationService = MedicationService();
   List<Medication> _medications = [];
+  bool _isLoading = false;
 
   @override
   void initState() {
@@ -19,89 +20,15 @@ class _MedicationsPageState extends State<MedicationsPage> {
   }
 
   Future<void> _loadMedications() async {
+    setState(() {
+      _isLoading = true;
+    });
+
     final medications = await _medicationService.loadMedications();
     setState(() {
       _medications = medications;
+      _isLoading = false;
     });
-  }
-
-  List<Widget> _buildActiveMedications() {
-    final today = DateTime.now();
-    final todayDate = DateTime(today.year, today.month, today.day);
-
-    final activeMeds = _medications.where((med) {
-      final startDate = DateTime(med.date.year, med.date.month, med.date.day);
-      final endDate = med.endDate != null
-          ? DateTime(med.endDate!.year, med.endDate!.month, med.endDate!.day)
-          : startDate;
-
-      return !todayDate.isBefore(startDate) && !todayDate.isAfter(endDate);
-    }).toList();
-
-    if (activeMeds.isEmpty) {
-      return [
-        Center(
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Text(
-              'No active medications',
-              style: TextStyle(
-                color: Colors.grey[600],
-                fontSize: 16,
-              ),
-            ),
-          ),
-        ),
-      ];
-    }
-
-    return activeMeds.map((medication) {
-      return _buildMedicationCard(
-        icon: '💊',
-        name: medication.name,
-        subtitle: _getMedicationStatus(medication),
-        medication: medication,
-      );
-    }).toList();
-  }
-
-  List<Widget> _buildCompletedMedications() {
-    final today = DateTime.now();
-    final todayDate = DateTime(today.year, today.month, today.day);
-
-    final completedMeds = _medications.where((med) {
-      final endDate = med.endDate != null
-          ? DateTime(med.endDate!.year, med.endDate!.month, med.endDate!.day)
-          : DateTime(med.date.year, med.date.month, med.date.day);
-
-      return todayDate.isAfter(endDate);
-    }).toList();
-
-    if (completedMeds.isEmpty) {
-      return [
-        Center(
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Text(
-              'No completed medications',
-              style: TextStyle(
-                color: Colors.grey[600],
-                fontSize: 16,
-              ),
-            ),
-          ),
-        ),
-      ];
-    }
-
-    return completedMeds.map((medication) {
-      return _buildMedicationCard(
-        icon: '💊',
-        name: medication.name,
-        subtitle: _getCompletionReason(medication),
-        medication: medication,
-      );
-    }).toList();
   }
 
   String _getMedicationStatus(Medication medication) {
@@ -148,64 +75,134 @@ class _MedicationsPageState extends State<MedicationsPage> {
     }
   }
 
-  Widget _buildMedicationCard({
-    required String icon,
-    required String name,
-    required String subtitle,
-    required Medication medication,
-  }) {
-    return Container(
-      margin: EdgeInsets.only(bottom: 8),
+  Widget _buildMedicationsList() {
+    final today = DateTime.now();
+    final todayDate = DateTime(today.year, today.month, today.day);
+
+    // Filter medications based on active/completed status
+    final filteredMeds = _medications.where((med) {
+      final startDate = DateTime(med.date.year, med.date.month, med.date.day);
+      final endDate = med.endDate != null
+          ? DateTime(med.endDate!.year, med.endDate!.month, med.endDate!.day)
+          : startDate;
+
+      if (isActiveTab) {
+        return !todayDate.isBefore(startDate) && !todayDate.isAfter(endDate);
+      } else {
+        return todayDate.isAfter(endDate);
+      }
+    }).toList();
+
+    if (_isLoading) {
+      return Center(
+        child: CircularProgressIndicator(
+          color: Color(0xFF4CAF50),
+        ),
+      );
+    }
+
+    // Use ListView even for empty state to ensure scrollability
+    return ListView.builder(
       padding: EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            spreadRadius: 1,
-            blurRadius: 4,
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: medication.color,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(
-              Icons.medication,
-              color: Colors.white,
-            ),
-          ),
-          SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  name,
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
+      // Always allow scrolling even when empty
+      physics: const AlwaysScrollableScrollPhysics(),
+      itemCount: filteredMeds.isEmpty ? 1 : filteredMeds.length,
+      itemBuilder: (context, index) {
+        if (filteredMeds.isEmpty) {
+          return Container(
+            height: MediaQuery.of(context).size.height *
+                0.7, // Take up most of the screen
+            child: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.medication_outlined,
+                    size: 48,
+                    color: Colors.grey[400],
                   ),
-                ),
-                Text(
-                  subtitle,
-                  style: TextStyle(
-                    color: Colors.grey[600],
-                    fontSize: 14,
+                  SizedBox(height: 16),
+                  Text(
+                    isActiveTab
+                        ? 'No active medications'
+                        : 'No completed medications',
+                    style: TextStyle(
+                      color: Colors.grey[600],
+                      fontSize: 16,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
+          );
+        }
+
+        final medication = filteredMeds[index];
+        return Container(
+          margin: EdgeInsets.only(bottom: 8),
+          padding: EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.grey.withOpacity(0.1),
+                spreadRadius: 1,
+                blurRadius: 4,
+              ),
+            ],
           ),
-        ],
-      ),
+          child: Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: medication.color,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  Icons.medication,
+                  color: Colors.white,
+                ),
+              ),
+              SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      medication.name,
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      isActiveTab
+                          ? _getMedicationStatus(medication)
+                          : _getCompletionReason(medication),
+                      style: TextStyle(
+                        color: Colors.grey[600],
+                        fontSize: 14,
+                      ),
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      'Time: ${medication.time}',
+                      style: TextStyle(
+                        color: Colors.grey[600],
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -287,13 +284,12 @@ class _MedicationsPageState extends State<MedicationsPage> {
               ),
             ),
 
-            // Medication List
+            // Medication List with RefreshIndicator
             Expanded(
-              child: ListView(
-                padding: EdgeInsets.all(16),
-                children: isActiveTab
-                    ? _buildActiveMedications()
-                    : _buildCompletedMedications(),
+              child: RefreshIndicator(
+                color: Color(0xFF4CAF50),
+                onRefresh: _loadMedications,
+                child: _buildMedicationsList(),
               ),
             ),
           ],
