@@ -31,7 +31,7 @@ class _AddMedicationScreenState extends State<AddMedicationScreen> {
 
   // Add these to your state variables
   Set<String> _selectedDays = {};
-  final List<String> _daysOfWeek = ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'];
+  final List<String> _daysOfWeek = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'];
   DateTime _endDate =
       DateTime.now().add(Duration(days: 1)); // Tomorrow by default
 
