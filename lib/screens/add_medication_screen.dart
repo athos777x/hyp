@@ -821,6 +821,36 @@ class _AddMedicationScreenState extends State<AddMedicationScreen> {
             endDate = _startDate
                 .add(Duration(days: int.parse(_daysAmountController.text) - 1));
           }
+        } else if (_selectedEndOption == 'medication supply' &&
+            _supplyAmountController.text.isNotEmpty) {
+          // Calculate end date based on supply amount and doses per day
+          int supplyAmount = int.tryParse(_supplyAmountController.text) ?? 0;
+          int dosesPerDay = _doseTimes.length; // Number of doses per day
+
+          if (supplyAmount < dosesPerDay) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                    'Supply amount cannot be less than daily doses (${dosesPerDay})'),
+                backgroundColor: Colors.red,
+              ),
+            );
+            return;
+          }
+
+          // Calculate number of days the supply will last
+          int daysSupply = (supplyAmount / dosesPerDay).floor();
+
+          if (_selectedDaysTaken == 'everyday') {
+            // For everyday option, simply add the calculated days
+            endDate = _startDate.add(Duration(days: daysSupply - 1));
+          } else if (_selectedDaysTaken == 'selected days' &&
+              _selectedDays.isNotEmpty) {
+            // For selected days, calculate how many weeks needed
+            int dosesPerWeek = _selectedDays.length;
+            int totalDays = ((daysSupply * 7) / dosesPerWeek).ceil();
+            endDate = _startDate.add(Duration(days: totalDays - 1));
+          }
         } else if (_selectedEndOption == 'consistently') {
           endDate = DateTime(_startDate.year + 10);
         }
