@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'screens/add_measurement_screen.dart';
 
 class HealthPage extends StatefulWidget {
   @override
@@ -76,7 +77,13 @@ class _HealthPageState extends State<HealthPage> {
                         ],
                       ),
                       TextButton(
-                        onPressed: () {},
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => AddMeasurementScreen()),
+                          );
+                        },
                         style: TextButton.styleFrom(
                           padding: EdgeInsets.zero,
                           minimumSize: Size.zero,
