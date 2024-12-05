@@ -16,7 +16,7 @@ class _AddMeasurementScreenState extends State<AddMeasurementScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Color(0xFFF5F5F5),
       appBar: AppBar(
         leading: IconButton(
           icon: Icon(Icons.arrow_back_ios, color: Colors.black),
@@ -47,7 +47,7 @@ class _AddMeasurementScreenState extends State<AddMeasurementScreen> {
                     Container(
                       padding: EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: Color(0xFFF5F5F5),
+                        color: Colors.white,
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Column(
@@ -64,7 +64,7 @@ class _AddMeasurementScreenState extends State<AddMeasurementScreen> {
                     Container(
                       padding: EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: Color(0xFFF5F5F5),
+                        color: Colors.white,
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: _buildReminder(),
