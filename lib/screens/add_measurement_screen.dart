@@ -18,22 +18,37 @@ class _AddMeasurementScreenState extends State<AddMeasurementScreen> {
     return Scaffold(
       backgroundColor: Color(0xFFF5F5F5),
       appBar: AppBar(
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios, color: Colors.black),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: Text(
-          'Blood pressure',
-          style: TextStyle(color: Colors.black, fontSize: 16),
-        ),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.close, color: Colors.black),
+        backgroundColor: Color(0xFFF5F5F5),
+        elevation: 0,
+        leadingWidth: 48,
+        leading: Padding(
+          padding: EdgeInsets.only(top: 16.0),
+          child: IconButton(
+            icon: Icon(
+              Icons.arrow_back_ios,
+              color: Colors.black,
+              size: 20,
+            ),
             onPressed: () => Navigator.pop(context),
           ),
+        ),
+        centerTitle: true,
+        title: Padding(
+          padding: EdgeInsets.only(top: 16.0),
+          child: Text(
+            'Blood pressure',
+            style: TextStyle(color: Colors.black, fontSize: 16),
+          ),
+        ),
+        actions: [
+          Padding(
+            padding: EdgeInsets.only(top: 16.0),
+            child: IconButton(
+              icon: Icon(Icons.close, color: Colors.black),
+              onPressed: () => Navigator.pop(context),
+            ),
+          ),
         ],
-        backgroundColor: Colors.white,
-        elevation: 0,
       ),
       body: Column(
         children: [
