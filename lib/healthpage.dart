@@ -64,6 +64,7 @@ class _HealthPageState extends State<HealthPage> {
                               fontWeight: FontWeight.w500,
                             ),
                           ),
+                          SizedBox(height: 8),
                           Text(
                             'SYS/DIA',
                             style: TextStyle(
