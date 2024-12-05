@@ -14,6 +14,7 @@ class _AddMeasurementScreenState extends State<AddMeasurementScreen> {
   TextEditingController diaController = TextEditingController();
   Set<String> _selectedDays = {};
   final List<String> _daysOfWeek = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'];
+  List<TimeOfDay> _reminderTimes = [TimeOfDay.now()];
 
   @override
   Widget build(BuildContext context) {
@@ -340,32 +341,94 @@ class _AddMeasurementScreenState extends State<AddMeasurementScreen> {
             }).toList(),
           ),
           SizedBox(height: 16),
-          InkWell(
-            onTap: () async {
-              final TimeOfDay? time = await showTimePicker(
-                context: context,
-                initialTime: selectedTime,
-              );
-              if (time != null) {
-                setState(() => selectedTime = time);
-              }
-            },
-            child: Container(
-              width: double.infinity,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    selectedTime.hour == TimeOfDay.now().hour &&
-                            selectedTime.minute == TimeOfDay.now().minute
-                        ? 'Now'
-                        : selectedTime.format(context),
-                    style: TextStyle(fontSize: 16),
+          ListView.builder(
+            shrinkWrap: true,
+            physics: NeverScrollableScrollPhysics(),
+            itemCount:
+                _reminderTimes.length + (_reminderTimes.length < 5 ? 1 : 0),
+            itemBuilder: (context, index) {
+              if (index == _reminderTimes.length) {
+                return TextButton(
+                  onPressed: () {
+                    if (_reminderTimes.length < 5) {
+                      setState(() {
+                        _reminderTimes.add(TimeOfDay.now());
+                        // Sort times
+                        _reminderTimes.sort((a, b) {
+                          int aMinutes = a.hour * 60 + a.minute;
+                          int bMinutes = b.hour * 60 + b.minute;
+                          return aMinutes.compareTo(bMinutes);
+                        });
+                      });
+                    }
+                  },
+                  child: Text('+ Add time'),
+                  style: TextButton.styleFrom(
+                    foregroundColor: Color(0xFF4CAF50),
+                    padding: EdgeInsets.zero,
                   ),
-                  Icon(Icons.chevron_right, color: Colors.grey),
-                ],
-              ),
-            ),
+                );
+              }
+              return Padding(
+                padding: EdgeInsets.only(bottom: 16),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: InkWell(
+                        onTap: () async {
+                          final TimeOfDay? time = await showTimePicker(
+                            context: context,
+                            initialTime: _reminderTimes[index],
+                          );
+                          if (time != null) {
+                            setState(() {
+                              _reminderTimes[index] = time;
+                              // Sort times after updating
+                              _reminderTimes.sort((a, b) {
+                                int aMinutes = a.hour * 60 + a.minute;
+                                int bMinutes = b.hour * 60 + b.minute;
+                                return aMinutes.compareTo(bMinutes);
+                              });
+                            });
+                          }
+                        },
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              _reminderTimes[index].hour ==
+                                          TimeOfDay.now().hour &&
+                                      _reminderTimes[index].minute ==
+                                          TimeOfDay.now().minute
+                                  ? 'Now'
+                                  : _reminderTimes[index].format(context),
+                              style: TextStyle(fontSize: 16),
+                            ),
+                            Icon(Icons.chevron_right, color: Colors.grey),
+                          ],
+                        ),
+                      ),
+                    ),
+                    if (_reminderTimes.length > 1) ...[
+                      SizedBox(width: 8),
+                      GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            _reminderTimes.removeAt(index);
+                          });
+                        },
+                        child: Icon(
+                          Icons.remove_circle_outline,
+                          color: Colors.red,
+                          size: 20,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              );
+            },
           ),
         ],
       ],
