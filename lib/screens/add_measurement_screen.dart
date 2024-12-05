@@ -145,50 +145,70 @@ class _AddMeasurementScreenState extends State<AddMeasurementScreen> {
         ),
         SizedBox(height: 8),
         // SYS TextField
-        TextField(
-          controller: sysController,
-          keyboardType: TextInputType.number,
-          style: TextStyle(fontSize: 16),
-          decoration: InputDecoration(
-            contentPadding: EdgeInsets.zero,
-            isDense: true,
-            hintText: '120',
-            hintStyle: TextStyle(color: Colors.grey[400]),
-            border: UnderlineInputBorder(
-              borderSide: BorderSide(color: Colors.grey[300]!),
-            ),
-            enabledBorder: UnderlineInputBorder(
-              borderSide: BorderSide(color: Colors.grey[300]!),
-            ),
-            suffixText: 'SYS',
-            suffixStyle: TextStyle(
-              color: Colors.grey[600],
-              fontSize: 14,
+        Container(
+          decoration: BoxDecoration(
+            border: Border(
+              bottom: BorderSide(color: Colors.grey[300]!),
             ),
           ),
+          child: Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: sysController,
+                  keyboardType: TextInputType.number,
+                  style: TextStyle(fontSize: 16),
+                  decoration: InputDecoration(
+                    contentPadding: EdgeInsets.zero,
+                    isDense: true,
+                    hintText: '120',
+                    hintStyle: TextStyle(color: Colors.grey[400]),
+                    border: InputBorder.none,
+                  ),
+                ),
+              ),
+              Text(
+                'SYS',
+                style: TextStyle(
+                  color: Colors.black,
+                  fontSize: 14,
+                ),
+              ),
+            ],
+          ),
         ),
-        SizedBox(height: 16), // Space between SYS and DIA
+        SizedBox(height: 16),
         // DIA TextField
-        TextField(
-          controller: diaController,
-          keyboardType: TextInputType.number,
-          style: TextStyle(fontSize: 16),
-          decoration: InputDecoration(
-            contentPadding: EdgeInsets.zero,
-            isDense: true,
-            hintText: '80',
-            hintStyle: TextStyle(color: Colors.grey[400]),
-            border: UnderlineInputBorder(
-              borderSide: BorderSide(color: Colors.grey[300]!),
+        Container(
+          decoration: BoxDecoration(
+            border: Border(
+              bottom: BorderSide(color: Colors.grey[300]!),
             ),
-            enabledBorder: UnderlineInputBorder(
-              borderSide: BorderSide(color: Colors.grey[300]!),
-            ),
-            suffixText: 'DIA',
-            suffixStyle: TextStyle(
-              color: Colors.grey[600],
-              fontSize: 14,
-            ),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: diaController,
+                  keyboardType: TextInputType.number,
+                  style: TextStyle(fontSize: 16),
+                  decoration: InputDecoration(
+                    contentPadding: EdgeInsets.zero,
+                    isDense: true,
+                    hintText: '80',
+                    hintStyle: TextStyle(color: Colors.grey[400]),
+                    border: InputBorder.none,
+                  ),
+                ),
+              ),
+              Text(
+                'DIA',
+                style: TextStyle(
+                  color: Colors.black,
+                  fontSize: 14,
+                ),
+              ),
+            ],
           ),
         ),
       ],
