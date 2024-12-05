@@ -232,6 +232,15 @@ class _AddMeasurementScreenState extends State<AddMeasurementScreen> {
   }
 
   Widget _buildDateSelector() {
+    String formatDate(DateTime date) {
+      if (date.year == DateTime.now().year &&
+          date.month == DateTime.now().month &&
+          date.day == DateTime.now().day) {
+        return 'Today';
+      }
+      return '${date.day}/${date.month}/${date.year}';
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -258,7 +267,7 @@ class _AddMeasurementScreenState extends State<AddMeasurementScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  selectedDate == DateTime.now() ? 'Today' : 'Selected Date',
+                  formatDate(selectedDate),
                   style: TextStyle(fontSize: 16),
                 ),
                 Icon(Icons.chevron_right, color: Colors.grey),
