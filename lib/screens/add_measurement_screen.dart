@@ -146,17 +146,22 @@ class _AddMeasurementScreenState extends State<AddMeasurementScreen> {
         SizedBox(height: 8),
         // SYS TextField
         Container(
+          height: 40,
           decoration: BoxDecoration(
             border: Border(
               bottom: BorderSide(color: Colors.grey[300]!),
             ),
           ),
           child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Expanded(
-                child: TextField(
+                child: TextFormField(
                   controller: sysController,
                   keyboardType: TextInputType.number,
+                  autofocus: false,
+                  enableInteractiveSelection: true,
+                  enabled: true,
                   style: TextStyle(fontSize: 16),
                   decoration: InputDecoration(
                     contentPadding: EdgeInsets.zero,
@@ -167,11 +172,14 @@ class _AddMeasurementScreenState extends State<AddMeasurementScreen> {
                   ),
                 ),
               ),
-              Text(
-                'SYS',
-                style: TextStyle(
-                  color: Colors.black,
-                  fontSize: 14,
+              Padding(
+                padding: EdgeInsets.only(left: 8),
+                child: Text(
+                  'SYS',
+                  style: TextStyle(
+                    color: Colors.black,
+                    fontSize: 14,
+                  ),
                 ),
               ),
             ],
@@ -180,17 +188,22 @@ class _AddMeasurementScreenState extends State<AddMeasurementScreen> {
         SizedBox(height: 16),
         // DIA TextField
         Container(
+          height: 40,
           decoration: BoxDecoration(
             border: Border(
               bottom: BorderSide(color: Colors.grey[300]!),
             ),
           ),
           child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Expanded(
-                child: TextField(
+                child: TextFormField(
                   controller: diaController,
                   keyboardType: TextInputType.number,
+                  autofocus: false,
+                  enableInteractiveSelection: true,
+                  enabled: true,
                   style: TextStyle(fontSize: 16),
                   decoration: InputDecoration(
                     contentPadding: EdgeInsets.zero,
@@ -201,11 +214,14 @@ class _AddMeasurementScreenState extends State<AddMeasurementScreen> {
                   ),
                 ),
               ),
-              Text(
-                'DIA',
-                style: TextStyle(
-                  color: Colors.black,
-                  fontSize: 14,
+              Padding(
+                padding: EdgeInsets.only(left: 8),
+                child: Text(
+                  'DIA',
+                  style: TextStyle(
+                    color: Colors.black,
+                    fontSize: 14,
+                  ),
                 ),
               ),
             ],
