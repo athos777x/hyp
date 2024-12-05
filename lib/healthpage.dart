@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'screens/add_measurement_screen.dart';
 import 'models/blood_pressure.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl/intl.dart';
+import 'dart:convert';
 
 class HealthPage extends StatefulWidget {
   @override
@@ -10,6 +12,41 @@ class HealthPage extends StatefulWidget {
 
 class _HealthPageState extends State<HealthPage> {
   List<BloodPressure> measurements = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadMeasurements();
+  }
+
+  Future<void> _loadMeasurements() async {
+    final prefs = await SharedPreferences.getInstance();
+    final measurementsJson = prefs.getStringList('measurements') ?? [];
+
+    setState(() {
+      measurements = measurementsJson.map((json) {
+        final map = jsonDecode(json);
+        return BloodPressure(
+          systolic: map['systolic'],
+          diastolic: map['diastolic'],
+          timestamp: DateTime.parse(map['timestamp']),
+        );
+      }).toList();
+    });
+  }
+
+  Future<void> _saveMeasurements() async {
+    final prefs = await SharedPreferences.getInstance();
+    final measurementsJson = measurements.map((measurement) {
+      return jsonEncode({
+        'systolic': measurement.systolic,
+        'diastolic': measurement.diastolic,
+        'timestamp': measurement.timestamp.toIso8601String(),
+      });
+    }).toList();
+
+    await prefs.setStringList('measurements', measurementsJson);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -62,16 +99,18 @@ class _HealthPageState extends State<HealthPage> {
                     children: [
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
-                        children: const [
+                        children: [
                           Text(
-                            '-/-',
-                            style: TextStyle(
+                            measurements.isEmpty
+                                ? '-/-'
+                                : '${measurements[0].systolic}/${measurements[0].diastolic}',
+                            style: const TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
-                          SizedBox(height: 8),
-                          Text(
+                          const SizedBox(height: 8),
+                          const Text(
                             'SYS/DIA',
                             style: TextStyle(
                               fontSize: 12,
@@ -91,6 +130,7 @@ class _HealthPageState extends State<HealthPage> {
                             setState(() {
                               measurements.insert(0, result);
                             });
+                            _saveMeasurements();
                           }
                         },
                         style: TextButton.styleFrom(
