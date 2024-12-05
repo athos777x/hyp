@@ -12,6 +12,8 @@ class _AddMeasurementScreenState extends State<AddMeasurementScreen> {
   bool remindToMeasure = false;
   TextEditingController sysController = TextEditingController();
   TextEditingController diaController = TextEditingController();
+  Set<String> _selectedDays = {};
+  final List<String> _daysOfWeek = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'];
 
   @override
   Widget build(BuildContext context) {
@@ -123,7 +125,10 @@ class _AddMeasurementScreenState extends State<AddMeasurementScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  selectedTime.format(context),
+                  selectedTime.hour == TimeOfDay.now().hour &&
+                          selectedTime.minute == TimeOfDay.now().minute
+                      ? 'Now'
+                      : selectedTime.format(context),
                   style: TextStyle(fontSize: 16),
                 ),
                 Icon(Icons.chevron_right, color: Colors.grey),
@@ -297,11 +302,72 @@ class _AddMeasurementScreenState extends State<AddMeasurementScreen> {
             ),
           ],
         ),
-        SizedBox(height: 4),
-        Text(
-          'MON, TUE, WED, THU, FRI, SAT, SUN | 9:00 AM',
-          style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-        ),
+        if (remindToMeasure) ...[
+          SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: _daysOfWeek.map((day) {
+              final isSelected = _selectedDays.contains(day);
+              return GestureDetector(
+                onTap: () {
+                  setState(() {
+                    if (isSelected) {
+                      _selectedDays.remove(day);
+                    } else {
+                      _selectedDays.add(day);
+                    }
+                  });
+                },
+                child: Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: isSelected ? Color(0xFF4CAF50) : Colors.grey[300],
+                  ),
+                  child: Center(
+                    child: Text(
+                      day,
+                      style: TextStyle(
+                        color: isSelected ? Colors.white : Colors.grey[600],
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+          SizedBox(height: 16),
+          InkWell(
+            onTap: () async {
+              final TimeOfDay? time = await showTimePicker(
+                context: context,
+                initialTime: selectedTime,
+              );
+              if (time != null) {
+                setState(() => selectedTime = time);
+              }
+            },
+            child: Container(
+              width: double.infinity,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    selectedTime.hour == TimeOfDay.now().hour &&
+                            selectedTime.minute == TimeOfDay.now().minute
+                        ? 'Now'
+                        : selectedTime.format(context),
+                    style: TextStyle(fontSize: 16),
+                  ),
+                  Icon(Icons.chevron_right, color: Colors.grey),
+                ],
+              ),
+            ),
+          ),
+        ],
       ],
     );
   }
