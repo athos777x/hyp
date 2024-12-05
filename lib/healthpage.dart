@@ -6,6 +6,11 @@ import 'package:intl/intl.dart';
 import 'dart:convert';
 
 class HealthPage extends StatefulWidget {
+  static Future<void> clearMeasurements() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('measurements');
+  }
+
   @override
   _HealthPageState createState() => _HealthPageState();
 }

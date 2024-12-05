@@ -5,6 +5,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'onboarding_screen.dart';
 import 'services/medication_service.dart';
+import '../healthpage.dart';
 
 class SettingsPage extends StatefulWidget {
   @override
@@ -79,6 +80,9 @@ class _SettingsPageState extends State<SettingsPage> {
 
         // Clear all medications from SharedPreferences
         await _medicationService.clearMedications();
+
+        // Clear blood pressure measurements
+        await HealthPage.clearMeasurements();
 
         // Delete the Firebase Auth account
         await user.delete();
