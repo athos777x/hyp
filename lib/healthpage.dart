@@ -53,6 +53,7 @@ class _HealthPageState extends State<HealthPage> {
                   const SizedBox(height: 8),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -76,6 +77,11 @@ class _HealthPageState extends State<HealthPage> {
                       ),
                       TextButton(
                         onPressed: () {},
+                        style: TextButton.styleFrom(
+                          padding: EdgeInsets.zero,
+                          minimumSize: Size.zero,
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        ),
                         child: const Text(
                           'Add measurement',
                           style: TextStyle(
