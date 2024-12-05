@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'screens/add_measurement_screen.dart';
+import 'models/blood_pressure.dart';
+import 'package:intl/intl.dart';
 
 class HealthPage extends StatefulWidget {
   @override
@@ -7,6 +9,8 @@ class HealthPage extends StatefulWidget {
 }
 
 class _HealthPageState extends State<HealthPage> {
+  List<BloodPressure> measurements = [];
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -77,12 +81,17 @@ class _HealthPageState extends State<HealthPage> {
                         ],
                       ),
                       TextButton(
-                        onPressed: () {
-                          Navigator.push(
+                        onPressed: () async {
+                          final result = await Navigator.push(
                             context,
                             MaterialPageRoute(
                                 builder: (context) => AddMeasurementScreen()),
                           );
+                          if (result != null && result is BloodPressure) {
+                            setState(() {
+                              measurements.insert(0, result);
+                            });
+                          }
                         },
                         style: TextButton.styleFrom(
                           padding: EdgeInsets.zero,
@@ -116,54 +125,58 @@ class _HealthPageState extends State<HealthPage> {
             const SizedBox(height: 8),
 
             // History items
-            ListView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: 3,
-              itemBuilder: (context, index) {
-                return Container(
-                  margin: const EdgeInsets.only(bottom: 8),
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.grey.withOpacity(0.1),
-                        spreadRadius: 1,
-                        blurRadius: 4,
-                      ),
-                    ],
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        '120/80',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
+            Expanded(
+              child: ListView.builder(
+                shrinkWrap: true,
+                physics: const AlwaysScrollableScrollPhysics(),
+                itemCount: measurements.length,
+                itemBuilder: (context, index) {
+                  final measurement = measurements[index];
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 8),
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.grey.withOpacity(0.1),
+                          spreadRadius: 1,
+                          blurRadius: 4,
                         ),
-                      ),
-                      Row(
-                        children: [
-                          Text(
-                            'Nov ${index + 1}, 9:41 AM',
-                            style: const TextStyle(
-                              color: Colors.grey,
-                              fontSize: 14,
+                      ],
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          '${measurement.systolic}/${measurement.diastolic}',
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        Row(
+                          children: [
+                            Text(
+                              DateFormat('MMM d, h:mm a')
+                                  .format(measurement.timestamp),
+                              style: const TextStyle(
+                                color: Colors.grey,
+                                fontSize: 14,
+                              ),
                             ),
-                          ),
-                          const Icon(
-                            Icons.chevron_right,
-                            color: Colors.grey,
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                );
-              },
+                            const Icon(
+                              Icons.chevron_right,
+                              color: Colors.grey,
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
             ),
           ],
         ),

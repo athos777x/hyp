@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import '../models/blood_pressure.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class AddMeasurementScreen extends StatefulWidget {
   @override
@@ -15,6 +17,46 @@ class _AddMeasurementScreenState extends State<AddMeasurementScreen> {
   Set<String> _selectedDays = {};
   final List<String> _daysOfWeek = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'];
   List<TimeOfDay> _reminderTimes = [TimeOfDay.now()];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadReminderPreferences();
+  }
+
+  Future<void> _loadReminderPreferences() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      remindToMeasure = prefs.getBool('remindToMeasure') ?? false;
+      _selectedDays =
+          Set<String>.from(prefs.getStringList('selectedDays') ?? []);
+
+      // Load reminder times
+      final savedTimes = prefs.getStringList('reminderTimes') ?? [];
+      _reminderTimes = savedTimes.map((timeStr) {
+        final parts = timeStr.split(':');
+        return TimeOfDay(
+          hour: int.parse(parts[0]),
+          minute: int.parse(parts[1]),
+        );
+      }).toList();
+
+      if (_reminderTimes.isEmpty) {
+        _reminderTimes = [TimeOfDay.now()];
+      }
+    });
+  }
+
+  Future<void> _saveReminderPreferences() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('remindToMeasure', remindToMeasure);
+    await prefs.setStringList('selectedDays', _selectedDays.toList());
+
+    // Save reminder times
+    final timeStrings =
+        _reminderTimes.map((time) => '${time.hour}:${time.minute}').toList();
+    await prefs.setStringList('reminderTimes', timeStrings);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -298,7 +340,10 @@ class _AddMeasurementScreenState extends State<AddMeasurementScreen> {
             ),
             Switch.adaptive(
               value: remindToMeasure,
-              onChanged: (value) => setState(() => remindToMeasure = value),
+              onChanged: (value) {
+                setState(() => remindToMeasure = value);
+                _saveReminderPreferences();
+              },
               activeColor: Colors.green,
             ),
           ],
@@ -318,6 +363,7 @@ class _AddMeasurementScreenState extends State<AddMeasurementScreen> {
                       _selectedDays.add(day);
                     }
                   });
+                  _saveReminderPreferences();
                 },
                 child: Container(
                   width: 36,
@@ -360,6 +406,7 @@ class _AddMeasurementScreenState extends State<AddMeasurementScreen> {
                           return aMinutes.compareTo(bMinutes);
                         });
                       });
+                      _saveReminderPreferences();
                     }
                   },
                   child: Text('+ Add time'),
@@ -391,6 +438,7 @@ class _AddMeasurementScreenState extends State<AddMeasurementScreen> {
                                 return aMinutes.compareTo(bMinutes);
                               });
                             });
+                            _saveReminderPreferences();
                           }
                         },
                         child: Row(
@@ -417,6 +465,7 @@ class _AddMeasurementScreenState extends State<AddMeasurementScreen> {
                           setState(() {
                             _reminderTimes.removeAt(index);
                           });
+                          _saveReminderPreferences();
                         },
                         child: Icon(
                           Icons.remove_circle_outline,
@@ -440,8 +489,33 @@ class _AddMeasurementScreenState extends State<AddMeasurementScreen> {
       width: double.infinity,
       child: ElevatedButton(
         onPressed: () {
-          // TODO: Implement measurement adding logic
-          Navigator.pop(context);
+          // Validate inputs
+          final sys = int.tryParse(sysController.text);
+          final dia = int.tryParse(diaController.text);
+
+          if (sys == null || dia == null) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Please enter valid measurements'),
+              ),
+            );
+            return;
+          }
+
+          // Create and return the measurement
+          final measurement = BloodPressure(
+            systolic: sys,
+            diastolic: dia,
+            timestamp: DateTime(
+              selectedDate.year,
+              selectedDate.month,
+              selectedDate.day,
+              selectedTime.hour,
+              selectedTime.minute,
+            ),
+          );
+
+          Navigator.pop(context, measurement);
         },
         style: ElevatedButton.styleFrom(
           backgroundColor: Color(0xFF4CAF50),
