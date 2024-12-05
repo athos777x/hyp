@@ -10,8 +10,8 @@ class _AddMeasurementScreenState extends State<AddMeasurementScreen> {
   TimeOfDay selectedTime = TimeOfDay.now();
   DateTime selectedDate = DateTime.now();
   bool remindToMeasure = false;
-  TextEditingController sysController = TextEditingController(text: '120');
-  TextEditingController diaController = TextEditingController(text: '80');
+  TextEditingController sysController = TextEditingController();
+  TextEditingController diaController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
@@ -144,54 +144,52 @@ class _AddMeasurementScreenState extends State<AddMeasurementScreen> {
           style: TextStyle(fontSize: 14, color: Colors.grey[600]),
         ),
         SizedBox(height: 8),
-        Row(
-          children: [
-            Expanded(
-              child: TextField(
-                controller: sysController,
-                keyboardType: TextInputType.number,
-                style: TextStyle(fontSize: 16),
-                decoration: InputDecoration(
-                  contentPadding: EdgeInsets.zero,
-                  isDense: true,
-                  border: UnderlineInputBorder(
-                    borderSide: BorderSide(color: Colors.grey[300]!),
-                  ),
-                  enabledBorder: UnderlineInputBorder(
-                    borderSide: BorderSide(color: Colors.grey[300]!),
-                  ),
-                  suffixText: 'SYS',
-                  suffixStyle: TextStyle(
-                    color: Colors.grey[600],
-                    fontSize: 14,
-                  ),
-                ),
-              ),
+        // SYS TextField
+        TextField(
+          controller: sysController,
+          keyboardType: TextInputType.number,
+          style: TextStyle(fontSize: 16),
+          decoration: InputDecoration(
+            contentPadding: EdgeInsets.zero,
+            isDense: true,
+            hintText: '120',
+            hintStyle: TextStyle(color: Colors.grey[400]),
+            border: UnderlineInputBorder(
+              borderSide: BorderSide(color: Colors.grey[300]!),
             ),
-            SizedBox(width: 16),
-            Expanded(
-              child: TextField(
-                controller: diaController,
-                keyboardType: TextInputType.number,
-                style: TextStyle(fontSize: 16),
-                decoration: InputDecoration(
-                  contentPadding: EdgeInsets.zero,
-                  isDense: true,
-                  border: UnderlineInputBorder(
-                    borderSide: BorderSide(color: Colors.grey[300]!),
-                  ),
-                  enabledBorder: UnderlineInputBorder(
-                    borderSide: BorderSide(color: Colors.grey[300]!),
-                  ),
-                  suffixText: 'DIA',
-                  suffixStyle: TextStyle(
-                    color: Colors.grey[600],
-                    fontSize: 14,
-                  ),
-                ),
-              ),
+            enabledBorder: UnderlineInputBorder(
+              borderSide: BorderSide(color: Colors.grey[300]!),
             ),
-          ],
+            suffixText: 'SYS',
+            suffixStyle: TextStyle(
+              color: Colors.grey[600],
+              fontSize: 14,
+            ),
+          ),
+        ),
+        SizedBox(height: 16), // Space between SYS and DIA
+        // DIA TextField
+        TextField(
+          controller: diaController,
+          keyboardType: TextInputType.number,
+          style: TextStyle(fontSize: 16),
+          decoration: InputDecoration(
+            contentPadding: EdgeInsets.zero,
+            isDense: true,
+            hintText: '80',
+            hintStyle: TextStyle(color: Colors.grey[400]),
+            border: UnderlineInputBorder(
+              borderSide: BorderSide(color: Colors.grey[300]!),
+            ),
+            enabledBorder: UnderlineInputBorder(
+              borderSide: BorderSide(color: Colors.grey[300]!),
+            ),
+            suffixText: 'DIA',
+            suffixStyle: TextStyle(
+              color: Colors.grey[600],
+              fontSize: 14,
+            ),
+          ),
         ),
       ],
     );
