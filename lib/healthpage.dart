@@ -53,6 +53,55 @@ class _HealthPageState extends State<HealthPage> {
     await prefs.setStringList('measurements', measurementsJson);
   }
 
+  void _showMeasurementOptions(int index, BloodPressure measurement) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.edit, color: Colors.blue),
+              title: const Text('Edit measurement'),
+              onTap: () async {
+                Navigator.pop(context);
+                final result = await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => AddMeasurementScreen(
+                      measurement: measurement,
+                    ),
+                  ),
+                );
+                if (result != null && result is BloodPressure) {
+                  setState(() {
+                    measurements[index] = result;
+                  });
+                  _saveMeasurements();
+                }
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.delete, color: Colors.red),
+              title: const Text('Delete measurement'),
+              onTap: () {
+                Navigator.pop(context);
+                setState(() {
+                  measurements.removeAt(index);
+                });
+                _saveMeasurements();
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -177,47 +226,50 @@ class _HealthPageState extends State<HealthPage> {
                 itemCount: measurements.length,
                 itemBuilder: (context, index) {
                   final measurement = measurements[index];
-                  return Container(
-                    margin: const EdgeInsets.only(bottom: 8),
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.grey.withOpacity(0.1),
-                          spreadRadius: 1,
-                          blurRadius: 4,
-                        ),
-                      ],
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          '${measurement.systolic}/${measurement.diastolic}',
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w500,
+                  return GestureDetector(
+                    onTap: () => _showMeasurementOptions(index, measurement),
+                    child: Container(
+                      margin: const EdgeInsets.only(bottom: 8),
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.grey.withOpacity(0.1),
+                            spreadRadius: 1,
+                            blurRadius: 4,
                           ),
-                        ),
-                        Row(
-                          children: [
-                            Text(
-                              DateFormat('MMM d, h:mm a')
-                                  .format(measurement.timestamp),
-                              style: const TextStyle(
-                                color: Colors.grey,
-                                fontSize: 14,
+                        ],
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            '${measurement.systolic}/${measurement.diastolic}',
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          Row(
+                            children: [
+                              Text(
+                                DateFormat('MMM d, h:mm a')
+                                    .format(measurement.timestamp),
+                                style: const TextStyle(
+                                  color: Colors.grey,
+                                  fontSize: 14,
+                                ),
                               ),
-                            ),
-                            const Icon(
-                              Icons.chevron_right,
-                              color: Colors.grey,
-                            ),
-                          ],
-                        ),
-                      ],
+                              const Icon(
+                                Icons.chevron_right,
+                                color: Colors.grey,
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
                   );
                 },

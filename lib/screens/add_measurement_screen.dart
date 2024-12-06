@@ -4,6 +4,10 @@ import '../models/blood_pressure.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AddMeasurementScreen extends StatefulWidget {
+  final BloodPressure? measurement;
+
+  const AddMeasurementScreen({Key? key, this.measurement}) : super(key: key);
+
   @override
   _AddMeasurementScreenState createState() => _AddMeasurementScreenState();
 }
@@ -21,6 +25,12 @@ class _AddMeasurementScreenState extends State<AddMeasurementScreen> {
   @override
   void initState() {
     super.initState();
+    if (widget.measurement != null) {
+      sysController.text = widget.measurement!.systolic.toString();
+      diaController.text = widget.measurement!.diastolic.toString();
+      selectedTime = TimeOfDay.fromDateTime(widget.measurement!.timestamp);
+      selectedDate = widget.measurement!.timestamp;
+    }
     _loadReminderPreferences();
   }
 
@@ -81,7 +91,7 @@ class _AddMeasurementScreenState extends State<AddMeasurementScreen> {
         title: Padding(
           padding: EdgeInsets.only(top: 16.0),
           child: Text(
-            'Blood pressure',
+            widget.measurement != null ? 'Edit measurement' : 'Blood pressure',
             style: TextStyle(color: Colors.black, fontSize: 16),
           ),
         ),
@@ -526,7 +536,7 @@ class _AddMeasurementScreenState extends State<AddMeasurementScreen> {
           elevation: 0,
         ),
         child: Text(
-          'Add',
+          widget.measurement != null ? 'Save' : 'Add',
           style: TextStyle(
             color: Colors.white,
             fontSize: 16,
