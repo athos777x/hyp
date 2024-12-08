@@ -13,7 +13,7 @@ class SettingsPage extends StatefulWidget {
 }
 
 class _SettingsPageState extends State<SettingsPage> {
-  bool reminderEnabled = true;
+  bool alarmEnabled = true;
   bool notificationsEnabled = true;
   final TextEditingController _nameController = TextEditingController();
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -219,9 +219,9 @@ class _SettingsPageState extends State<SettingsPage> {
                 child: Column(
                   children: [
                     _buildSwitchTile(
-                      'Reminder',
-                      reminderEnabled,
-                      (value) => setState(() => reminderEnabled = value),
+                      'Alarm',
+                      alarmEnabled,
+                      (value) => setState(() => alarmEnabled = value),
                     ),
                     Divider(height: 1, color: Colors.grey[200]),
                     _buildSwitchTile(
