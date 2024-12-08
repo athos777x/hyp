@@ -75,6 +75,16 @@ class _SignsAndSymptomsPageState extends State<SignsAndSymptomsPage> {
 
   List<MapEntry<String, List<String>>> filteredSymptoms = [];
 
+  // Add this map to define severity colors
+  final Map<String, Color> categoryColors = {
+    'Common Symptoms': Color(0xFFFFF9C4), // Light yellow
+    'Less Common Symptoms': Color(0xFFFFE0B2), // Light orange
+    'Advanced Symptoms': Color(0xFFFFCCBC), // Light red-orange
+    'Signs of Organ Damage': Color(0xFFFFAB91), // Darker orange-red
+    'Emergency Symptoms': Color(0xFFFF8A80), // Red
+    'Rare Symptoms': Color(0xFFFFECB3), // Light amber
+  };
+
   @override
   void initState() {
     super.initState();
@@ -175,9 +185,10 @@ class _SignsAndSymptomsPageState extends State<SignsAndSymptomsPage> {
                       ],
                       ...category.value
                           .map((symptom) => Container(
-                                margin: EdgeInsets.only(bottom: 8),
+                                margin: EdgeInsets.only(bottom: 6),
                                 decoration: BoxDecoration(
-                                  color: Colors.white,
+                                  color: categoryColors[category.key] ??
+                                      Colors.white, // Use category color
                                   borderRadius: BorderRadius.circular(12),
                                   boxShadow: [
                                     BoxShadow(
@@ -195,14 +206,16 @@ class _SignsAndSymptomsPageState extends State<SignsAndSymptomsPage> {
                                       color: Colors.black87,
                                     ),
                                   ),
+                                  dense: true,
+                                  visualDensity: VisualDensity(vertical: -2),
                                   contentPadding: EdgeInsets.symmetric(
                                     horizontal: 16,
-                                    vertical: 8,
+                                    vertical: 6,
                                   ),
                                 ),
                               ))
                           .toList(),
-                      SizedBox(height: 8),
+                      SizedBox(height: 6),
                     ],
                   );
                 },
