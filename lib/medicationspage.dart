@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'models/medication.dart';
 import 'services/medication_service.dart';
+import 'screens/add_medication_screen.dart';
 
 class MedicationsPage extends StatefulWidget {
   @override
@@ -153,58 +154,61 @@ class _MedicationsPageState extends State<MedicationsPage> {
         }
 
         final medication = filteredMeds[index];
-        return Container(
-          margin: EdgeInsets.only(bottom: 8),
-          padding: EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.grey.withOpacity(0.1),
-                spreadRadius: 1,
-                blurRadius: 4,
-              ),
-            ],
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: medication.color,
-                  borderRadius: BorderRadius.circular(8),
+        return GestureDetector(
+          onTap: () => _showMedicationOptions(medication.name, filteredMeds),
+          child: Container(
+            margin: EdgeInsets.only(bottom: 8),
+            padding: EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.grey.withOpacity(0.1),
+                  spreadRadius: 1,
+                  blurRadius: 4,
                 ),
-                child: Icon(
-                  Icons.medication,
-                  color: Colors.white,
+              ],
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: medication.color,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(
+                    Icons.medication,
+                    color: Colors.white,
+                  ),
                 ),
-              ),
-              SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      medication.name,
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
+                SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        medication.name,
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
-                    ),
-                    SizedBox(height: 4),
-                    Text(
-                      _getMedicationRule(medication),
-                      style: TextStyle(
-                        color: Colors.grey[600],
-                        fontSize: 14,
+                      SizedBox(height: 4),
+                      Text(
+                        _getMedicationRule(medication),
+                        style: TextStyle(
+                          color: Colors.grey[600],
+                          fontSize: 14,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         );
       },
@@ -283,6 +287,88 @@ class _MedicationsPageState extends State<MedicationsPage> {
 
     // Default case for everyday medications
     return 'Taken daily';
+  }
+
+  void _showMedicationOptions(
+      String medicationName, List<Medication> medications) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.edit, color: Colors.blue),
+              title: const Text('Edit medication'),
+              onTap: () async {
+                Navigator.pop(context);
+                // Get all instances of this medication to edit
+                final medicationsToEdit = _medications
+                    .where((m) => m.name == medicationName)
+                    .toList();
+                if (medicationsToEdit.isNotEmpty) {
+                  final result = await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => AddMedicationScreen(
+                        selectedDate: medicationsToEdit[0].date,
+                        medicationToEdit: medicationsToEdit[0],
+                      ),
+                    ),
+                  );
+
+                  if (result != null && result is List<Medication>) {
+                    setState(() {
+                      // Remove all instances of the old medication
+                      _medications.removeWhere((m) => m.name == medicationName);
+                      // Add all the new medication instances
+                      _medications.addAll(result);
+                    });
+                    await _medicationService.saveMedications(_medications);
+                    _loadMedications();
+                  }
+                }
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.delete, color: Colors.red),
+              title: const Text('Delete medication'),
+              onTap: () async {
+                Navigator.pop(context);
+                setState(() {
+                  _medications.removeWhere((m) => m.name == medicationName);
+                });
+                await _medicationService.saveMedications(_medications);
+                _loadMedications();
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _addNewMedication() async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => AddMedicationScreen(
+          selectedDate: DateTime.now(),
+        ),
+      ),
+    );
+
+    if (result != null && result is List<Medication>) {
+      setState(() {
+        _medications.addAll(result);
+      });
+      await _medicationService.saveMedications(_medications);
+      _loadMedications();
+    }
   }
 
   @override

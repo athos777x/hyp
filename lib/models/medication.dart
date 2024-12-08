@@ -13,6 +13,10 @@ class Medication {
   final String? daysAmount;
   final String? supplyAmount;
   final List<TimeOfDay>? doseTimes;
+  final String? type;
+  final String? per;
+  final String? every;
+  final String? amount;
 
   Medication({
     required this.name,
@@ -27,6 +31,10 @@ class Medication {
     this.daysAmount,
     this.supplyAmount,
     this.doseTimes,
+    this.type,
+    this.per,
+    this.every,
+    this.amount,
   });
 
   String get formattedTime => time;
@@ -45,6 +53,10 @@ class Medication {
         'supplyAmount': supplyAmount,
         'doseTimes':
             doseTimes?.map((time) => '${time.hour}:${time.minute}').toList(),
+        'type': type,
+        'per': per,
+        'every': every,
+        'amount': amount,
       };
 
   factory Medication.fromJson(Map<String, dynamic> json) => Medication(
@@ -71,5 +83,9 @@ class Medication {
                 );
               }).toList()
             : null,
+        type: json['type'],
+        per: json['per'],
+        every: json['every'],
+        amount: json['amount'],
       );
 }

@@ -4,10 +4,12 @@ import 'dart:math';
 
 class AddMedicationScreen extends StatefulWidget {
   final DateTime selectedDate;
+  final Medication? medicationToEdit;
 
   const AddMedicationScreen({
     Key? key,
     required this.selectedDate,
+    this.medicationToEdit,
   }) : super(key: key);
 
   @override
@@ -70,6 +72,32 @@ class _AddMedicationScreenState extends State<AddMedicationScreen> {
 
     // Set initial per option based on default medication type
     _selectedPer = _perOptionsMap[_selectedType]!.first;
+
+    // If editing, populate the fields with existing medication data
+    if (widget.medicationToEdit != null) {
+      _nameController.text = widget.medicationToEdit!.name;
+      _amountController.text = widget.medicationToEdit!.amount ?? '';
+      _selectedType = widget.medicationToEdit!.type ?? 'Tablets';
+      _selectedPer =
+          widget.medicationToEdit!.per ?? _perOptionsMap[_selectedType]!.first;
+      _selectedEvery = widget.medicationToEdit!.every ?? 'Before meals';
+      _startDate = widget.medicationToEdit!.date;
+      _endDate =
+          widget.medicationToEdit!.endDate ?? _startDate.add(Duration(days: 1));
+      _selectedDaysTaken = widget.medicationToEdit!.daysTaken;
+      _selectedEndOption = widget.medicationToEdit!.selectedEndOption ?? 'date';
+      _daysAmountController.text = widget.medicationToEdit!.daysAmount ?? '';
+      _supplyAmountController.text =
+          widget.medicationToEdit!.supplyAmount ?? '';
+
+      if (widget.medicationToEdit!.selectedDays != null) {
+        _selectedDays =
+            Set<String>.from(widget.medicationToEdit!.selectedDays!);
+      }
+      if (widget.medicationToEdit!.doseTimes != null) {
+        _doseTimes = List<TimeOfDay>.from(widget.medicationToEdit!.doseTimes!);
+      }
+    }
   }
 
   // Add this method to update _selectedPer when medication type changes
@@ -774,150 +802,34 @@ class _AddMedicationScreenState extends State<AddMedicationScreen> {
       if (_formKey.currentState!.validate()) {
         // Get the end date based on selected option
         DateTime? endDate;
-        if (_selectedEndOption == 'date') {
-          endDate = _endDate;
-        } else if (_selectedEndOption == 'amount of days' &&
-            _daysAmountController.text.isNotEmpty) {
-          if (_selectedDaysTaken == 'selected days' &&
-              _selectedDays.isNotEmpty) {
-            // Calculate how many actual days needed to get the required number of doses
-            int requiredDoses = int.parse(_daysAmountController.text);
-            int currentDay = 0;
-            int doseCount = 0;
+        String? daysAmountValue = _daysAmountController.text.isEmpty
+            ? null
+            : _daysAmountController.text;
+        String? supplyAmountValue = _supplyAmountController.text.isEmpty
+            ? null
+            : _supplyAmountController.text;
 
-            while (doseCount < requiredDoses) {
-              final currentDate = _startDate.add(Duration(days: currentDay));
-              final currentDayName = _daysOfWeek[currentDate.weekday % 7];
-
-              if (_selectedDays.contains(currentDayName)) {
-                doseCount++;
-                if (doseCount == requiredDoses) {
-                  endDate = currentDate;
-                  break;
-                }
-              }
-              currentDay++;
+        switch (_selectedEndOption) {
+          case 'date':
+            endDate = _endDate;
+            break;
+          case 'amount of days':
+            if (daysAmountValue != null) {
+              final totalDays = int.parse(daysAmountValue);
+              endDate = _startDate.add(Duration(days: totalDays - 1));
             }
-          } else {
-            // For 'everyday' option, simply add the number of days minus 1
-            endDate = _startDate
-                .add(Duration(days: int.parse(_daysAmountController.text) - 1));
-          }
-        } else if (_selectedEndOption == 'medication supply' &&
-            _supplyAmountController.text.isNotEmpty) {
-          // Calculate end date based on supply amount and doses per day
-          int supplyAmount = int.tryParse(_supplyAmountController.text) ?? 0;
-          int dosesPerDay = _doseTimes.length; // Number of doses per day
-
-          if (supplyAmount < 1) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Supply amount must be at least 1'),
-                backgroundColor: Colors.red,
-              ),
-            );
-            return;
-          }
-
-          // Calculate full days and remaining doses
-          int fullDays = supplyAmount ~/ dosesPerDay; // Integer division
-          int remainingDoses = supplyAmount % dosesPerDay;
-
-          if (_selectedDaysTaken == 'everyday') {
-            // For everyday option
-            endDate = _startDate.add(Duration(days: fullDays));
-
-            // Create medications list with correct number of doses for each day
-            final medications = <Medication>[];
-
-            // Add medications for full days
-            for (int day = 0; day <= fullDays - 1; day++) {
-              final currentDate = _startDate.add(Duration(days: day));
-              medications.addAll(_doseTimes.map((doseTime) => Medication(
-                    name: _nameController.text,
-                    time: doseTime.format(context),
-                    color: Colors
-                        .primaries[Random().nextInt(Colors.primaries.length)],
-                    date: currentDate,
-                    endDate: endDate,
-                    daysTaken: _selectedDaysTaken,
-                    selectedDays: null,
-                  )));
+            break;
+          case 'medication supply':
+            if (supplyAmountValue != null) {
+              final totalSupply = int.parse(supplyAmountValue);
+              final dosesPerDay = _doseTimes.length;
+              final totalDays = totalSupply ~/ dosesPerDay;
+              endDate = _startDate.add(Duration(days: totalDays - 1));
             }
-
-            // Add remaining doses for the last partial day if any
-            if (remainingDoses > 0) {
-              final lastDate = _startDate.add(Duration(days: fullDays));
-              // Only add the number of remaining doses, using the earliest time slots
-              for (int i = 0; i < remainingDoses; i++) {
-                medications.add(Medication(
-                  name: _nameController.text,
-                  time: _doseTimes[i].format(context),
-                  color: Colors
-                      .primaries[Random().nextInt(Colors.primaries.length)],
-                  date: lastDate,
-                  endDate:
-                      lastDate, // End date is same as last date for partial day
-                  daysTaken: _selectedDaysTaken,
-                  selectedDays: null,
-                ));
-              }
-            }
-
-            Navigator.pop(context, medications);
-            return;
-          } else if (_selectedDaysTaken == 'selected days' &&
-              _selectedDays.isNotEmpty) {
-            // Create medications list
-            final medications = <Medication>[];
-            int totalDosesUsed = 0;
-
-            // Process one day at a time until we use all supplies
-            int currentDay = 0;
-            while (totalDosesUsed < supplyAmount) {
-              final currentDate = _startDate.add(Duration(days: currentDay));
-              final currentDayName = _daysOfWeek[currentDate.weekday % 7];
-
-              if (_selectedDays.contains(currentDayName)) {
-                // Calculate remaining doses for this day
-                int dosesForThisDay =
-                    min(dosesPerDay, supplyAmount - totalDosesUsed);
-
-                // Add doses for this day
-                for (int i = 0; i < dosesForThisDay; i++) {
-                  medications.add(Medication(
-                    name: _nameController.text,
-                    time: _doseTimes[i].format(context),
-                    color: Colors
-                        .primaries[Random().nextInt(Colors.primaries.length)],
-                    date: currentDate,
-                    endDate:
-                        currentDate, // Set end date to the same as current date for partial days
-                    daysTaken: _selectedDaysTaken,
-                    selectedDays: _selectedDays.toList(),
-                  ));
-                  totalDosesUsed++;
-                }
-
-                // If this was a full day, set the end date for all medications on this day
-                if (dosesForThisDay == dosesPerDay) {
-                  for (var med in medications.where((m) =>
-                      m.date.year == currentDate.year &&
-                      m.date.month == currentDate.month &&
-                      m.date.day == currentDate.day)) {
-                    med.endDate = medications
-                        .last.date; // Set end date to the last medication date
-                  }
-                }
-              }
-              currentDay++;
-            }
-
-            Navigator.pop(context, medications);
-            return;
-          }
-        } else if (_selectedEndOption == 'consistently') {
-          endDate = DateTime(_startDate.year + 10);
+            break;
+          case 'consistently':
+            endDate = DateTime(_startDate.year + 10);
+            break;
         }
 
         // Create medications list with correct number of doses for each day
@@ -925,13 +837,23 @@ class _AddMedicationScreenState extends State<AddMedicationScreen> {
           return Medication(
             name: _nameController.text,
             time: doseTime.format(context),
-            color: Colors.primaries[Random().nextInt(Colors.primaries.length)],
+            color: widget.medicationToEdit?.color ??
+                Colors.primaries[Random().nextInt(Colors.primaries.length)],
             date: _startDate,
             endDate: endDate,
             daysTaken: _selectedDaysTaken,
             selectedDays: _selectedDaysTaken == 'selected days'
                 ? _selectedDays.toList()
                 : null,
+            doseTimes: _doseTimes,
+            selectedEndOption: _selectedEndOption,
+            daysAmount: daysAmountValue,
+            supplyAmount: supplyAmountValue,
+            type: _selectedType,
+            per: _selectedPer,
+            every: _selectedEvery,
+            amount:
+                _amountController.text.isEmpty ? null : _amountController.text,
           );
         }).toList();
 
