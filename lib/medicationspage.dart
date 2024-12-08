@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'models/medication.dart';
 import 'services/medication_service.dart';
 import 'screens/add_medication_screen.dart';
+import 'services/event_bus_service.dart';
+import 'dart:async';
 
 class MedicationsPage extends StatefulWidget {
   @override
@@ -13,11 +15,24 @@ class _MedicationsPageState extends State<MedicationsPage> {
   final MedicationService _medicationService = MedicationService();
   List<Medication> _medications = [];
   bool _isLoading = false;
+  late StreamSubscription _medicationUpdateSubscription;
 
   @override
   void initState() {
     super.initState();
+
+    // Add subscription to medication updates
+    _medicationUpdateSubscription = EventBusService()
+        .medicationUpdateStream
+        .listen((_) => _loadMedications());
+
     _loadMedications();
+  }
+
+  @override
+  void dispose() {
+    _medicationUpdateSubscription.cancel();
+    super.dispose();
   }
 
   Future<void> _loadMedications() async {
@@ -264,15 +279,42 @@ class _MedicationsPageState extends State<MedicationsPage> {
         if (medication.supplyAmount != null) {
           final totalSupply = int.parse(medication.supplyAmount!);
           final dosesPerDay = medication.doseTimes?.length ?? 1;
-          final totalDays = totalSupply ~/ dosesPerDay;
+          int daysPerWeek = medication.daysTaken == 'everyday'
+              ? 7
+              : medication.selectedDays?.length ?? 7;
+
+          // Calculate total days needed
+          final totalDays =
+              (totalSupply / dosesPerDay * 7 / daysPerWeek).ceil();
           final endDate = startDate.add(Duration(days: totalDays - 1));
 
           if (todayDate.isAfter(endDate)) {
             return 'Completed (supply exhausted)';
           } else {
-            final remainingDays = endDate.difference(todayDate).inDays + 1;
-            final remainingSupply = (remainingDays * dosesPerDay);
-            return '$remainingSupply doses remaining of $totalSupply';
+            // Calculate days since start
+            final daysSinceStart = todayDate.difference(startDate).inDays;
+
+            // Calculate how many doses have been used
+            final weeksElapsed = daysSinceStart ~/ 7;
+            final remainingDaysInWeek = daysSinceStart % 7;
+
+            // Count doses used in complete weeks
+            int dosesUsed = weeksElapsed * daysPerWeek * dosesPerDay;
+
+            // Add doses used in remaining days
+            for (int i = 0; i < remainingDaysInWeek; i++) {
+              final checkDate =
+                  startDate.add(Duration(days: weeksElapsed * 7 + i));
+              if (medication.daysTaken == 'everyday' ||
+                  (medication.selectedDays
+                          ?.contains(_getDayAbbreviation(checkDate)) ??
+                      false)) {
+                dosesUsed += dosesPerDay;
+              }
+            }
+
+            final remainingDoses = totalSupply - dosesUsed;
+            return '$remainingDoses doses remaining of $totalSupply';
           }
         }
         break;
@@ -323,13 +365,11 @@ class _MedicationsPageState extends State<MedicationsPage> {
 
                   if (result != null && result is List<Medication>) {
                     setState(() {
-                      // Remove all instances of the old medication
                       _medications.removeWhere((m) => m.name == medicationName);
-                      // Add all the new medication instances
                       _medications.addAll(result);
                     });
                     await _medicationService.saveMedications(_medications);
-                    _loadMedications();
+                    EventBusService().notifyMedicationUpdate();
                   }
                 }
               },
@@ -343,6 +383,7 @@ class _MedicationsPageState extends State<MedicationsPage> {
                   _medications.removeWhere((m) => m.name == medicationName);
                 });
                 await _medicationService.saveMedications(_medications);
+                EventBusService().notifyMedicationUpdate();
                 _loadMedications();
               },
             ),
@@ -367,8 +408,13 @@ class _MedicationsPageState extends State<MedicationsPage> {
         _medications.addAll(result);
       });
       await _medicationService.saveMedications(_medications);
-      _loadMedications();
+      EventBusService().notifyMedicationUpdate();
     }
+  }
+
+  String _getDayAbbreviation(DateTime date) {
+    final days = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'];
+    return days[date.weekday % 7];
   }
 
   @override

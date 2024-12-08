@@ -3,6 +3,8 @@ import 'dart:math';
 import 'screens/add_medication_screen.dart';
 import 'services/medication_service.dart';
 import 'models/medication.dart';
+import 'services/event_bus_service.dart';
+import 'dart:async';
 
 class DailyPage extends StatefulWidget {
   @override
@@ -25,6 +27,8 @@ class _DailyPageState extends State<DailyPage> {
   final MedicationService _medicationService = MedicationService();
   List<Medication> _medications = [];
 
+  late StreamSubscription _medicationUpdateSubscription;
+
   @override
   void initState() {
     super.initState();
@@ -42,9 +46,21 @@ class _DailyPageState extends State<DailyPage> {
     });
 
     _loadMedications();
+
+    // Add subscription to medication updates
+    _medicationUpdateSubscription = EventBusService()
+        .medicationUpdateStream
+        .listen((_) => _loadMedications());
   }
 
   Future<void> _loadMedications() async {
+    final medications = await _medicationService.loadMedications();
+    setState(() {
+      _medications = medications;
+    });
+  }
+
+  Future<void> _refreshMedications() async {
     final medications = await _medicationService.loadMedications();
     setState(() {
       _medications = medications;
@@ -327,13 +343,32 @@ class _DailyPageState extends State<DailyPage> {
                                         med.date.day,
                                       );
 
-                                      final endDate = med.endDate != null
-                                          ? DateTime(
-                                              med.endDate!.year,
-                                              med.endDate!.month,
-                                              med.endDate!.day,
-                                            )
-                                          : startDate;
+                                      // For medication supply, calculate the end date based on supply and doses
+                                      DateTime? endDate;
+                                      if (med.selectedEndOption ==
+                                              'medication supply' &&
+                                          med.supplyAmount != null) {
+                                        final totalSupply =
+                                            int.parse(med.supplyAmount!);
+                                        final dosesPerDay =
+                                            med.doseTimes?.length ?? 1;
+                                        // Calculate days based on selected days per week
+                                        int daysPerWeek =
+                                            med.daysTaken == 'everyday'
+                                                ? 7
+                                                : med.selectedDays?.length ?? 7;
+
+                                        // Calculate total days needed to use up supply
+                                        final totalDays = (totalSupply /
+                                                dosesPerDay *
+                                                7 /
+                                                daysPerWeek)
+                                            .ceil();
+                                        endDate = startDate
+                                            .add(Duration(days: totalDays - 1));
+                                      } else {
+                                        endDate = med.endDate ?? startDate;
+                                      }
 
                                       // Check if the date is within range
                                       final isWithinDateRange =
@@ -538,6 +573,7 @@ class _DailyPageState extends State<DailyPage> {
 
   @override
   void dispose() {
+    _medicationUpdateSubscription.cancel();
     _scrollController.dispose();
     super.dispose();
   }
@@ -841,5 +877,80 @@ class _DailyPageState extends State<DailyPage> {
   String _getDayAbbreviation(DateTime date) {
     final days = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'];
     return days[date.weekday % 7];
+  }
+
+  void _showMedicationOptions(Medication medication) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.edit, color: Colors.blue),
+              title: const Text('Edit medication'),
+              onTap: () async {
+                Navigator.pop(context);
+                final result = await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => AddMedicationScreen(
+                      selectedDate: medication.date,
+                      medicationToEdit: medication,
+                    ),
+                  ),
+                );
+
+                if (result != null && result is List<Medication>) {
+                  // Remove old medication instances
+                  _medications.removeWhere((m) => m.name == medication.name);
+                  // Add new medication instances
+                  _medications.addAll(result);
+                  // Save changes
+                  await _medicationService.saveMedications(_medications);
+                  // Refresh the list
+                  await _refreshMedications();
+                }
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.delete, color: Colors.red),
+              title: const Text('Delete medication'),
+              onTap: () async {
+                Navigator.pop(context);
+                setState(() {
+                  _medications.removeWhere((m) => m.name == medication.name);
+                });
+                await _medicationService.saveMedications(_medications);
+                await _refreshMedications();
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _addNewMedication() async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => AddMedicationScreen(
+          selectedDate: _selectedDay,
+        ),
+      ),
+    );
+
+    if (result != null && result is List<Medication>) {
+      setState(() {
+        _medications.addAll(result);
+      });
+      await _medicationService.saveMedications(_medications);
+      await _refreshMedications();
+    }
   }
 }
