@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/medication.dart';
 import 'dart:math';
+import '../services/notification_service.dart';
 
 class AddMedicationScreen extends StatefulWidget {
   final DateTime selectedDate;
@@ -856,6 +857,9 @@ class _AddMedicationScreenState extends State<AddMedicationScreen> {
                 _amountController.text.isEmpty ? null : _amountController.text,
           );
         }).toList();
+
+        // Schedule notifications for the new medications
+        NotificationService().scheduleMedicationReminders(medications);
 
         Navigator.pop(context, medications);
       }

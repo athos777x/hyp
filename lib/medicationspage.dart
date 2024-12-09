@@ -4,6 +4,7 @@ import 'services/medication_service.dart';
 import 'screens/add_medication_screen.dart';
 import 'services/event_bus_service.dart';
 import 'dart:async';
+import 'services/notification_service.dart';
 
 class MedicationsPage extends StatefulWidget {
   @override
@@ -379,6 +380,10 @@ class _MedicationsPageState extends State<MedicationsPage> {
               title: const Text('Delete medication'),
               onTap: () async {
                 Navigator.pop(context);
+                // Cancel notifications for this medication
+                await NotificationService()
+                    .cancelMedicationNotifications(medicationName);
+
                 setState(() {
                   _medications.removeWhere((m) => m.name == medicationName);
                 });

@@ -3,10 +3,15 @@ import 'onboarding_screen.dart';
 import 'homepage.dart'; // Import your homepage
 import 'package:firebase_core/firebase_core.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'services/notification_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
+
+  // Initialize notification service
+  await NotificationService().initialize();
+
   final prefs = await SharedPreferences.getInstance();
   final showOnboarding = prefs.getBool('showOnboarding') ?? true;
   runApp(MainApp(showOnboarding: showOnboarding));

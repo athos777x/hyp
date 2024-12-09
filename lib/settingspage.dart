@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'onboarding_screen.dart';
 import 'services/medication_service.dart';
 import '../healthpage.dart';
+import 'services/notification_service.dart';
 
 class SettingsPage extends StatefulWidget {
   @override
@@ -72,6 +73,9 @@ class _SettingsPageState extends State<SettingsPage> {
     try {
       final user = _auth.currentUser;
       if (user != null) {
+        // Cancel all notifications before deleting account
+        await NotificationService().cancelAllNotifications();
+
         // Delete user data from Firestore
         await FirebaseFirestore.instance
             .collection('users')
