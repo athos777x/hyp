@@ -4,6 +4,7 @@ import 'homepage.dart'; // Import your homepage
 import 'package:firebase_core/firebase_core.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'services/notification_service.dart';
+import 'services/medication_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -11,6 +12,10 @@ void main() async {
 
   // Initialize notification service
   await NotificationService().initialize();
+
+  // Get medications and check/reschedule notifications
+  final medications = await MedicationService().getMedications();
+  await NotificationService().checkAndRescheduleNotifications(medications);
 
   final prefs = await SharedPreferences.getInstance();
   final showOnboarding = prefs.getBool('showOnboarding') ?? true;

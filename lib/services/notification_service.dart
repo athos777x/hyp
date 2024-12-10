@@ -2,6 +2,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest.dart' as tz;
 import '../models/medication.dart';
+import 'package:shared_preferences/shared_preferences.dart' as prefs;
 
 class NotificationService {
   static final NotificationService _instance = NotificationService._internal();
@@ -10,6 +11,8 @@ class NotificationService {
 
   final FlutterLocalNotificationsPlugin _notifications =
       FlutterLocalNotificationsPlugin();
+
+  static const String _lastRescheduleKey = 'last_notification_reschedule';
 
   Future<void> initialize() async {
     tz.initializeTimeZones();
@@ -36,63 +39,119 @@ class NotificationService {
     );
   }
 
+  Future<void> checkAndRescheduleNotifications(
+      List<Medication> medications) async {
+    final sharedPrefs = await prefs.SharedPreferences.getInstance();
+    final lastReschedule = sharedPrefs.getInt(_lastRescheduleKey) ?? 0;
+    final now = DateTime.now().millisecondsSinceEpoch;
+
+    // Check if it's been at least 30 days since last reschedule
+    if (now - lastReschedule >= const Duration(days: 30).inMilliseconds) {
+      // Cancel all existing future notifications
+      final pendingNotifications =
+          await _notifications.pendingNotificationRequests();
+      for (var notification in pendingNotifications) {
+        await _notifications.cancel(notification.id);
+      }
+
+      // Reschedule notifications for all medications
+      await scheduleMedicationReminders(medications);
+
+      // Update last reschedule time
+      await sharedPrefs.setInt(_lastRescheduleKey, now);
+    }
+  }
+
   Future<void> scheduleMedicationReminders(List<Medication> medications) async {
+    // First cancel any existing notifications for these medications
+    for (var medication in medications) {
+      await cancelMedicationNotifications(medication.name);
+    }
+
+    // Then schedule new notifications
     for (var medication in medications) {
       if (medication.doseTimes == null) continue;
 
-      // Calculate end date based on medication settings
       DateTime endDate;
-      if (medication.selectedEndOption == 'consistently') {
-        endDate =
-            DateTime.now().add(Duration(days: 365)); // Schedule for a year
-      } else if (medication.selectedEndOption == 'date') {
-        endDate = medication.endDate ?? medication.date;
-      } else if (medication.selectedEndOption == 'amount of days' &&
-          medication.daysAmount != null) {
-        final days = int.tryParse(medication.daysAmount!) ?? 0;
-        endDate = medication.date.add(Duration(days: days));
-      } else if (medication.selectedEndOption == 'medication supply' &&
-          medication.supplyAmount != null) {
-        final supply = int.tryParse(medication.supplyAmount!) ?? 0;
-        final dosesPerDay = medication.doseTimes!.length;
-        final days = (supply / dosesPerDay).ceil();
-        endDate = medication.date.add(Duration(days: days));
+      if (medication.selectedEndOption == 'consistently' ||
+          medication.endDate?.isAfter(DateTime.now().add(Duration(days: 90))) ==
+              true) {
+        // For 'consistently' option or far-future end dates, schedule for next 90 days
+        endDate = DateTime.now().add(Duration(days: 90));
       } else {
-        endDate = medication.date;
+        // For other cases, use the calculated end date
+        endDate = _calculateEndDate(medication);
       }
 
-      // Schedule notifications for each dose time until the end date
-      for (var doseTime in medication.doseTimes!) {
-        DateTime currentDate = medication.date;
-        while (!currentDate.isAfter(endDate)) {
-          if (medication.daysTaken == 'everyday' ||
-              (medication.daysTaken == 'selected days' &&
-                  medication.selectedDays
-                          ?.contains(_getDayAbbreviation(currentDate)) ==
-                      true)) {
-            final scheduledTime = DateTime(
-              currentDate.year,
-              currentDate.month,
-              currentDate.day,
-              doseTime.hour,
-              doseTime.minute,
-            );
+      // Limit the scheduling window to avoid exceeding alarm limits
+      final maxSchedulingDate = DateTime.now().add(Duration(days: 90));
+      if (endDate.isAfter(maxSchedulingDate)) {
+        endDate = maxSchedulingDate;
+      }
 
-            if (scheduledTime.isAfter(DateTime.now())) {
-              await _scheduleNotification(
-                id: _generateNotificationId(medication, scheduledTime),
-                title: 'Medication Reminder',
-                body:
-                    'Time to take ${medication.amount ?? ''} ${medication.name}',
-                scheduledTime: scheduledTime,
-                payload: medication.name,
-              );
-            }
+      await _scheduleNotificationsForMedication(medication, endDate);
+    }
+  }
+
+  DateTime _calculateEndDate(Medication medication) {
+    if (medication.selectedEndOption == 'date') {
+      return medication.endDate ?? medication.date;
+    } else if (medication.selectedEndOption == 'amount of days' &&
+        medication.daysAmount != null) {
+      final days = int.tryParse(medication.daysAmount!) ?? 0;
+      return medication.date.add(Duration(days: days));
+    } else if (medication.selectedEndOption == 'medication supply' &&
+        medication.supplyAmount != null) {
+      final supply = int.tryParse(medication.supplyAmount!) ?? 0;
+      final dosesPerDay = medication.doseTimes!.length;
+      final days = (supply / dosesPerDay).ceil();
+      return medication.date.add(Duration(days: days));
+    }
+    return medication.date;
+  }
+
+  Future<void> _scheduleNotificationsForMedication(
+    Medication medication,
+    DateTime endDate,
+  ) async {
+    int scheduledCount = 0;
+    final maxNotifications = 450; // Keep buffer below 500 limit
+
+    for (var doseTime in medication.doseTimes!) {
+      DateTime currentDate = medication.date;
+      while (
+          !currentDate.isAfter(endDate) && scheduledCount < maxNotifications) {
+        if (_shouldScheduleForDate(medication, currentDate)) {
+          final scheduledTime = DateTime(
+            currentDate.year,
+            currentDate.month,
+            currentDate.day,
+            doseTime.hour,
+            doseTime.minute,
+          );
+
+          if (scheduledTime.isAfter(DateTime.now())) {
+            await _scheduleNotification(
+              id: _generateNotificationId(medication, scheduledTime),
+              title: 'Medication Reminder',
+              body:
+                  'Time to take ${medication.amount ?? ''} ${medication.name}',
+              scheduledTime: scheduledTime,
+              payload: medication.name,
+            );
+            scheduledCount++;
           }
-          currentDate = currentDate.add(Duration(days: 1));
         }
+        currentDate = currentDate.add(Duration(days: 1));
       }
     }
+  }
+
+  bool _shouldScheduleForDate(Medication medication, DateTime date) {
+    return medication.daysTaken == 'everyday' ||
+        (medication.daysTaken == 'selected days' &&
+            medication.selectedDays?.contains(_getDayAbbreviation(date)) ==
+                true);
   }
 
   Future<void> _scheduleNotification({
