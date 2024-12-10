@@ -7,6 +7,7 @@ class Medication {
   final String time;
   final Color color;
   bool taken;
+  bool skipped;
   final List<String>? selectedDays;
   final String daysTaken;
   final String? selectedEndOption;
@@ -26,6 +27,7 @@ class Medication {
     required this.time,
     required this.color,
     this.taken = false,
+    this.skipped = false,
     this.selectedDays,
     this.daysTaken = 'everyday',
     this.selectedEndOption,
@@ -48,6 +50,7 @@ class Medication {
         'time': time,
         'color': color.value,
         'taken': taken,
+        'skipped': skipped,
         'selectedDays': selectedDays,
         'daysTaken': daysTaken,
         'selectedEndOption': selectedEndOption,
@@ -71,6 +74,7 @@ class Medication {
         time: json['time'],
         color: Color(json['color']),
         taken: json['taken'] ?? false,
+        skipped: json['skipped'] ?? false,
         selectedDays: json['selectedDays'] != null
             ? List<String>.from(json['selectedDays'])
             : null,
@@ -109,6 +113,7 @@ class Medication {
     String? time,
     Color? color,
     bool? taken,
+    bool? skipped,
     List<String>? selectedDays,
     String? daysTaken,
     String? selectedEndOption,
@@ -128,6 +133,7 @@ class Medication {
       time: time ?? this.time,
       color: color ?? this.color,
       taken: taken ?? this.taken,
+      skipped: skipped ?? this.skipped,
       selectedDays: selectedDays ?? this.selectedDays,
       daysTaken: daysTaken ?? this.daysTaken,
       selectedEndOption: selectedEndOption ?? this.selectedEndOption,
@@ -150,6 +156,7 @@ class Medication {
       'time': time,
       'color': color.value,
       'taken': taken,
+      'skipped': skipped,
       'selectedDays': selectedDays,
       'daysTaken': daysTaken,
       'selectedEndOption': selectedEndOption,
@@ -173,6 +180,7 @@ class Medication {
       time: map['time'],
       color: Color(map['color']),
       taken: map['taken'] ?? false,
+      skipped: map['skipped'] ?? false,
       selectedDays: map['selectedDays'] != null
           ? List<String>.from(map['selectedDays'])
           : null,

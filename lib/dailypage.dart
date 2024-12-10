@@ -507,26 +507,137 @@ class _DailyPageState extends State<DailyPage> {
                                                     fontSize: 14,
                                                   ),
                                                 ),
-                                                trailing: medication.taken
-                                                    ? Icon(
-                                                        Icons.check_circle,
-                                                        color:
-                                                            Color(0xFF4CAF50),
-                                                      )
-                                                    : Icon(
-                                                        Icons.circle_outlined,
-                                                        color: Colors.grey[400],
+                                                trailing: GestureDetector(
+                                                  onTap: () async {
+                                                    // Show a modal bottom sheet with options
+                                                    showModalBottomSheet(
+                                                      context: context,
+                                                      shape:
+                                                          RoundedRectangleBorder(
+                                                        borderRadius:
+                                                            BorderRadius.vertical(
+                                                                top: Radius
+                                                                    .circular(
+                                                                        15)),
                                                       ),
-                                                onTap: () async {
-                                                  setState(() {
-                                                    medication.taken =
-                                                        !medication.taken;
-                                                  });
-                                                  // Save medications after updating taken status
-                                                  await _medicationService
-                                                      .saveMedications(
-                                                          _medications);
-                                                },
+                                                      builder: (BuildContext
+                                                          context) {
+                                                        return Container(
+                                                          padding: EdgeInsets
+                                                              .symmetric(
+                                                                  vertical: 20),
+                                                          child: Column(
+                                                            mainAxisSize:
+                                                                MainAxisSize
+                                                                    .min,
+                                                            children: [
+                                                              ListTile(
+                                                                leading: Icon(
+                                                                  Icons
+                                                                      .check_circle,
+                                                                  color: Color(
+                                                                      0xFF4CAF50),
+                                                                ),
+                                                                title: Text(
+                                                                    'Mark as taken'),
+                                                                onTap:
+                                                                    () async {
+                                                                  Navigator.pop(
+                                                                      context);
+                                                                  setState(() {
+                                                                    medication
+                                                                            .taken =
+                                                                        true;
+                                                                    medication
+                                                                            .skipped =
+                                                                        false;
+                                                                  });
+                                                                  await _medicationService
+                                                                      .saveMedications(
+                                                                          _medications);
+                                                                },
+                                                              ),
+                                                              ListTile(
+                                                                leading: Icon(
+                                                                  Icons.close,
+                                                                  color: Colors
+                                                                      .red,
+                                                                ),
+                                                                title: Text(
+                                                                    'Mark as skipped'),
+                                                                onTap:
+                                                                    () async {
+                                                                  Navigator.pop(
+                                                                      context);
+                                                                  setState(() {
+                                                                    medication
+                                                                            .skipped =
+                                                                        true;
+                                                                    medication
+                                                                            .taken =
+                                                                        false;
+                                                                  });
+                                                                  await _medicationService
+                                                                      .saveMedications(
+                                                                          _medications);
+                                                                },
+                                                              ),
+                                                              if (medication
+                                                                      .taken ||
+                                                                  medication
+                                                                      .skipped)
+                                                                ListTile(
+                                                                  leading: Icon(
+                                                                    Icons
+                                                                        .radio_button_unchecked,
+                                                                    color: Colors
+                                                                            .grey[
+                                                                        400],
+                                                                  ),
+                                                                  title: Text(
+                                                                      'Mark as unchecked'),
+                                                                  onTap:
+                                                                      () async {
+                                                                    Navigator.pop(
+                                                                        context);
+                                                                    setState(
+                                                                        () {
+                                                                      medication
+                                                                              .taken =
+                                                                          false;
+                                                                      medication
+                                                                              .skipped =
+                                                                          false;
+                                                                    });
+                                                                    await _medicationService
+                                                                        .saveMedications(
+                                                                            _medications);
+                                                                  },
+                                                                ),
+                                                            ],
+                                                          ),
+                                                        );
+                                                      },
+                                                    );
+                                                  },
+                                                  child: medication.taken
+                                                      ? Icon(
+                                                          Icons.check_circle,
+                                                          color:
+                                                              Color(0xFF4CAF50),
+                                                        )
+                                                      : medication.skipped
+                                                          ? Icon(
+                                                              Icons.close,
+                                                              color: Colors.red,
+                                                            )
+                                                          : Icon(
+                                                              Icons
+                                                                  .circle_outlined,
+                                                              color: Colors
+                                                                  .grey[400],
+                                                            ),
+                                                ),
                                               ),
                                             ),
                                           ],
