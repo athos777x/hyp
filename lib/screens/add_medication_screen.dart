@@ -817,7 +817,28 @@ class _AddMedicationScreenState extends State<AddMedicationScreen> {
           case 'amount of days':
             if (daysAmountValue != null) {
               final totalDays = int.parse(daysAmountValue);
-              endDate = _startDate.add(Duration(days: totalDays - 1));
+              if (_selectedDaysTaken == 'selected days' &&
+                  _selectedDays.isNotEmpty) {
+                // Calculate actual calendar days needed based on selected days
+                int daysNeeded = 0;
+                int currentDayCount = 0;
+                DateTime currentDate = _startDate;
+
+                while (currentDayCount < totalDays) {
+                  String dayAbbrev = _getDayAbbreviation(currentDate);
+                  if (_selectedDays.contains(dayAbbrev)) {
+                    currentDayCount++;
+                  }
+                  if (currentDayCount < totalDays) {
+                    daysNeeded++;
+                    currentDate = currentDate.add(Duration(days: 1));
+                  }
+                }
+                endDate = _startDate.add(Duration(days: daysNeeded));
+              } else {
+                // For everyday option, just add the total days
+                endDate = _startDate.add(Duration(days: totalDays - 1));
+              }
             }
             break;
           case 'medication supply':
@@ -873,5 +894,11 @@ class _AddMedicationScreenState extends State<AddMedicationScreen> {
     _daysAmountController.dispose();
     _supplyAmountController.dispose();
     super.dispose();
+  }
+
+  // Add this method to the _AddMedicationScreenState class
+  String _getDayAbbreviation(DateTime date) {
+    final days = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'];
+    return days[date.weekday % 7];
   }
 }
