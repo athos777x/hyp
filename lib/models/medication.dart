@@ -6,8 +6,7 @@ class Medication {
   DateTime? endDate;
   final String time;
   final Color color;
-  bool taken;
-  bool skipped;
+  Map<String, Map<String, bool>>? statusMap;
   final List<String>? selectedDays;
   final String daysTaken;
   final String? selectedEndOption;
@@ -26,8 +25,7 @@ class Medication {
     this.endDate,
     required this.time,
     required this.color,
-    this.taken = false,
-    this.skipped = false,
+    this.statusMap,
     this.selectedDays,
     this.daysTaken = 'everyday',
     this.selectedEndOption,
@@ -42,6 +40,36 @@ class Medication {
   });
 
   String get formattedTime => time;
+
+  bool get taken {
+    if (statusMap == null) return false;
+    final dateKey = '${date.year}-${date.month}-${date.day}';
+    return statusMap![dateKey]?['taken'] ?? false;
+  }
+
+  bool get skipped {
+    if (statusMap == null) return false;
+    final dateKey = '${date.year}-${date.month}-${date.day}';
+    return statusMap![dateKey]?['skipped'] ?? false;
+  }
+
+  set taken(bool value) {
+    if (statusMap == null) statusMap = {};
+    final dateKey = '${date.year}-${date.month}-${date.day}';
+    if (!statusMap!.containsKey(dateKey)) {
+      statusMap![dateKey] = {'taken': false, 'skipped': false};
+    }
+    statusMap![dateKey]!['taken'] = value;
+  }
+
+  set skipped(bool value) {
+    if (statusMap == null) statusMap = {};
+    final dateKey = '${date.year}-${date.month}-${date.day}';
+    if (!statusMap!.containsKey(dateKey)) {
+      statusMap![dateKey] = {'taken': false, 'skipped': false};
+    }
+    statusMap![dateKey]!['skipped'] = value;
+  }
 
   Map<String, dynamic> toJson() => {
         'name': name,
@@ -64,6 +92,7 @@ class Medication {
         'amount': amount,
         'finalDayDoses':
             finalDayDoses?.map((t) => '${t.hour}:${t.minute}').toList(),
+        'statusMap': statusMap,
       };
 
   factory Medication.fromJson(Map<String, dynamic> json) => Medication(
@@ -73,8 +102,10 @@ class Medication {
             json['endDate'] != null ? DateTime.parse(json['endDate']) : null,
         time: json['time'],
         color: Color(json['color']),
-        taken: json['taken'] ?? false,
-        skipped: json['skipped'] ?? false,
+        statusMap: json['statusMap'] != null
+            ? Map<String, Map<String, bool>>.from(json['statusMap'].map(
+                (key, value) => MapEntry(key, Map<String, bool>.from(value))))
+            : null,
         selectedDays: json['selectedDays'] != null
             ? List<String>.from(json['selectedDays'])
             : null,
@@ -112,8 +143,7 @@ class Medication {
     DateTime? endDate,
     String? time,
     Color? color,
-    bool? taken,
-    bool? skipped,
+    Map<String, Map<String, bool>>? statusMap,
     List<String>? selectedDays,
     String? daysTaken,
     String? selectedEndOption,
@@ -132,8 +162,7 @@ class Medication {
       endDate: endDate ?? this.endDate,
       time: time ?? this.time,
       color: color ?? this.color,
-      taken: taken ?? this.taken,
-      skipped: skipped ?? this.skipped,
+      statusMap: statusMap ?? this.statusMap,
       selectedDays: selectedDays ?? this.selectedDays,
       daysTaken: daysTaken ?? this.daysTaken,
       selectedEndOption: selectedEndOption ?? this.selectedEndOption,
@@ -179,8 +208,10 @@ class Medication {
       endDate: map['endDate'] != null ? DateTime.parse(map['endDate']) : null,
       time: map['time'],
       color: Color(map['color']),
-      taken: map['taken'] ?? false,
-      skipped: map['skipped'] ?? false,
+      statusMap: map['statusMap'] != null
+          ? Map<String, Map<String, bool>>.from(map['statusMap'].map(
+              (key, value) => MapEntry(key, Map<String, bool>.from(value))))
+          : null,
       selectedDays: map['selectedDays'] != null
           ? List<String>.from(map['selectedDays'])
           : null,

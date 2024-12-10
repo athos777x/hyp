@@ -352,13 +352,11 @@ class _DailyPageState extends State<DailyPage> {
                                             int.parse(med.supplyAmount!);
                                         final dosesPerDay =
                                             med.doseTimes?.length ?? 1;
-                                        // Calculate days based on selected days per week
                                         int daysPerWeek =
                                             med.daysTaken == 'everyday'
                                                 ? 7
                                                 : med.selectedDays?.length ?? 7;
 
-                                        // Calculate total days needed to use up supply
                                         final totalDays = (totalSupply /
                                                 dosesPerDay *
                                                 7 /
@@ -385,6 +383,28 @@ class _DailyPageState extends State<DailyPage> {
                                                   true);
 
                                       return isWithinDateRange && isCorrectDay;
+                                    }).map((med) {
+                                      // Create a new instance for this specific date
+                                      return Medication(
+                                        name: med.name,
+                                        date: selectedDate,
+                                        endDate: med.endDate,
+                                        time: med.time,
+                                        color: med.color,
+                                        statusMap: med.statusMap,
+                                        selectedDays: med.selectedDays,
+                                        daysTaken: med.daysTaken,
+                                        selectedEndOption:
+                                            med.selectedEndOption,
+                                        daysAmount: med.daysAmount,
+                                        supplyAmount: med.supplyAmount,
+                                        doseTimes: med.doseTimes,
+                                        type: med.type,
+                                        per: med.per,
+                                        every: med.every,
+                                        amount: med.amount,
+                                        finalDayDoses: med.finalDayDoses,
+                                      );
                                     }).toList();
 
                                     // Sort medications by time
@@ -395,6 +415,10 @@ class _DailyPageState extends State<DailyPage> {
                                           _timeStringToDateTime(b.time);
                                       return aTime.compareTo(bTime);
                                     });
+
+                                    // Add auto-skip check here, after medications are filtered and sorted
+                                    _checkAndAutoSkipMedications(
+                                        medicationsForDay);
 
                                     if (medicationsForDay.isEmpty) {
                                       return Center(
@@ -427,6 +451,7 @@ class _DailyPageState extends State<DailyPage> {
                                       itemBuilder: (context, index) {
                                         final medication =
                                             medicationsForDay[index];
+
                                         final currentTime =
                                             _timeStringToDateTime(
                                                 medication.time);
@@ -544,17 +569,12 @@ class _DailyPageState extends State<DailyPage> {
                                                                     () async {
                                                                   Navigator.pop(
                                                                       context);
-                                                                  setState(() {
-                                                                    medication
-                                                                            .taken =
-                                                                        true;
-                                                                    medication
-                                                                            .skipped =
-                                                                        false;
-                                                                  });
-                                                                  await _medicationService
-                                                                      .saveMedications(
-                                                                          _medications);
+                                                                  await _updateMedicationStatus(
+                                                                      medication,
+                                                                      true,
+                                                                      false);
+                                                                  setState(
+                                                                      () {});
                                                                 },
                                                               ),
                                                               ListTile(
@@ -569,17 +589,12 @@ class _DailyPageState extends State<DailyPage> {
                                                                     () async {
                                                                   Navigator.pop(
                                                                       context);
-                                                                  setState(() {
-                                                                    medication
-                                                                            .skipped =
-                                                                        true;
-                                                                    medication
-                                                                            .taken =
-                                                                        false;
-                                                                  });
-                                                                  await _medicationService
-                                                                      .saveMedications(
-                                                                          _medications);
+                                                                  await _updateMedicationStatus(
+                                                                      medication,
+                                                                      false,
+                                                                      true);
+                                                                  setState(
+                                                                      () {});
                                                                 },
                                                               ),
                                                               if (medication
@@ -600,18 +615,12 @@ class _DailyPageState extends State<DailyPage> {
                                                                       () async {
                                                                     Navigator.pop(
                                                                         context);
+                                                                    await _updateMedicationStatus(
+                                                                        medication,
+                                                                        false,
+                                                                        false);
                                                                     setState(
-                                                                        () {
-                                                                      medication
-                                                                              .taken =
-                                                                          false;
-                                                                      medication
-                                                                              .skipped =
-                                                                          false;
-                                                                    });
-                                                                    await _medicationService
-                                                                        .saveMedications(
-                                                                            _medications);
+                                                                        () {});
                                                                   },
                                                                 ),
                                                             ],
@@ -1063,5 +1072,71 @@ class _DailyPageState extends State<DailyPage> {
       await _medicationService.saveMedications(_medications);
       await _refreshMedications();
     }
+  }
+
+  void _checkAndAutoSkipMedications(List<Medication> medications) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final selectedDay =
+        DateTime(_selectedDay.year, _selectedDay.month, _selectedDay.day);
+
+    // Only check for auto-skip on the current day
+    if (selectedDay.isAtSameMomentAs(today)) {
+      bool needsUpdate = false;
+      for (var medication in medications) {
+        final dateKey =
+            '${medication.date.year}-${medication.date.month}-${medication.date.day}';
+
+        // Only auto-skip if the medication hasn't had any status set yet
+        if (medication.statusMap == null ||
+            !medication.statusMap!.containsKey(dateKey)) {
+          final medicationTime = _timeStringToDateTime(medication.time);
+          final cutoffTime = DateTime(
+            now.year,
+            now.month,
+            now.day,
+            medicationTime.hour,
+            medicationTime.minute,
+          ).add(Duration(minutes: 30));
+
+          if (now.isAfter(cutoffTime)) {
+            _updateMedicationStatus(medication, false, true);
+            needsUpdate = true;
+          }
+        }
+      }
+
+      if (needsUpdate) {
+        Future.microtask(() {
+          setState(() {});
+        });
+      }
+    }
+  }
+
+  // Add this method to update the original medication's status for the specific date
+  Future<void> _updateMedicationStatus(
+      Medication displayMedication, bool taken, bool skipped) async {
+    // Find the original medication
+    final originalMedication = _medications.firstWhere((med) =>
+        med.name == displayMedication.name &&
+        med.time == displayMedication.time &&
+        med.type == displayMedication.type);
+
+    // Create or update the status map in the original medication
+    if (originalMedication.statusMap == null) {
+      originalMedication.statusMap = {};
+    }
+
+    // Store the status for this specific date
+    final dateKey =
+        '${displayMedication.date.year}-${displayMedication.date.month}-${displayMedication.date.day}';
+    originalMedication.statusMap![dateKey] = {
+      'taken': taken,
+      'skipped': skipped
+    };
+
+    // Save to storage
+    await _medicationService.saveMedications(_medications);
   }
 }
