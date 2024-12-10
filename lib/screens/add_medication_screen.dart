@@ -753,6 +753,10 @@ class _AddMedicationScreenState extends State<AddMedicationScreen> {
                     border: UnderlineInputBorder(),
                   ),
                   keyboardType: TextInputType.number,
+                  onChanged: (value) {
+                    // Update warning messages when supply amount changes
+                    setState(() {});
+                  },
                 ),
                 SizedBox(height: 8),
                 Text(
@@ -762,6 +766,26 @@ class _AddMedicationScreenState extends State<AddMedicationScreen> {
                     fontSize: 12,
                   ),
                 ),
+                if (_supplyAmountController.text.isNotEmpty) ...[
+                  SizedBox(height: 4),
+                  Builder(
+                    builder: (context) {
+                      final supply =
+                          int.tryParse(_supplyAmountController.text) ?? 0;
+                      final dosesPerDay = _doseTimes.length;
+                      if (supply > 0 && supply % dosesPerDay != 0) {
+                        return Text(
+                          'The total supply should be divisible by your daily doses (${_doseTimes.length})',
+                          style: TextStyle(
+                            color: Colors.orange[700],
+                            fontSize: 12,
+                          ),
+                        );
+                      }
+                      return SizedBox.shrink();
+                    },
+                  ),
+                ],
               ],
             ),
           ),
@@ -799,62 +823,75 @@ class _AddMedicationScreenState extends State<AddMedicationScreen> {
         _currentStep++;
       });
     } else {
-      // Create and return the medication
       if (_formKey.currentState!.validate()) {
-        // Get the end date based on selected option
         DateTime? endDate;
-        String? daysAmountValue = _daysAmountController.text.isEmpty
-            ? null
-            : _daysAmountController.text;
-        String? supplyAmountValue = _supplyAmountController.text.isEmpty
-            ? null
-            : _supplyAmountController.text;
+        List<TimeOfDay>? finalDayDoses;
 
-        switch (_selectedEndOption) {
-          case 'date':
-            endDate = _endDate;
-            break;
-          case 'amount of days':
-            if (daysAmountValue != null) {
-              final totalDays = int.parse(daysAmountValue);
-              if (_selectedDaysTaken == 'selected days' &&
-                  _selectedDays.isNotEmpty) {
-                // Calculate actual calendar days needed based on selected days
-                int daysNeeded = 0;
-                int currentDayCount = 0;
-                DateTime currentDate = _startDate;
+        if (_selectedEndOption == 'date') {
+          endDate = _endDate;
+        } else if (_selectedEndOption == 'amount of days') {
+          if (_daysAmountController.text.isEmpty) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Please enter number of days')),
+            );
+            return;
+          }
 
-                while (currentDayCount < totalDays) {
-                  String dayAbbrev = _getDayAbbreviation(currentDate);
-                  if (_selectedDays.contains(dayAbbrev)) {
-                    currentDayCount++;
-                  }
-                  if (currentDayCount < totalDays) {
-                    daysNeeded++;
-                    currentDate = currentDate.add(Duration(days: 1));
-                  }
-                }
-                endDate = _startDate.add(Duration(days: daysNeeded));
-              } else {
-                // For everyday option, just add the total days
-                endDate = _startDate.add(Duration(days: totalDays - 1));
+          final totalDays = int.parse(_daysAmountController.text);
+          if (_selectedDaysTaken == 'selected days' &&
+              _selectedDays.isNotEmpty) {
+            // Calculate actual calendar days needed based on selected days
+            int daysNeeded = 0;
+            int currentDayCount = 0;
+            DateTime currentDate = _startDate;
+
+            while (currentDayCount < totalDays) {
+              String dayAbbrev = _getDayAbbreviation(currentDate);
+              if (_selectedDays.contains(dayAbbrev)) {
+                currentDayCount++;
+              }
+              if (currentDayCount < totalDays) {
+                daysNeeded++;
+                currentDate = currentDate.add(Duration(days: 1));
               }
             }
-            break;
-          case 'medication supply':
-            if (supplyAmountValue != null) {
-              final totalSupply = int.parse(supplyAmountValue);
-              final dosesPerDay = _doseTimes.length;
-              final totalDays = totalSupply ~/ dosesPerDay;
-              endDate = _startDate.add(Duration(days: totalDays - 1));
-            }
-            break;
-          case 'consistently':
-            endDate = DateTime(_startDate.year + 10);
-            break;
+            endDate = _startDate.add(Duration(days: daysNeeded));
+          } else {
+            // For everyday option, just add the total days
+            endDate = _startDate.add(Duration(days: totalDays - 1));
+          }
+        } else if (_selectedEndOption == 'medication supply') {
+          if (_supplyAmountController.text.isEmpty) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Please enter supply amount')),
+            );
+            return;
+          }
+
+          final totalSupply = int.parse(_supplyAmountController.text);
+          if (totalSupply < _doseTimes.length) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                  content: Text('Supply must be at least one day\'s doses')),
+            );
+            return;
+          }
+
+          try {
+            final result = _calculateMedicationEndDate(totalSupply);
+            endDate = result.$1;
+            finalDayDoses = result.$2;
+          } catch (e) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(e.toString())),
+            );
+            return;
+          }
+        } else if (_selectedEndOption == 'consistently') {
+          endDate = DateTime(_startDate.year + 10);
         }
 
-        // Create medications list with correct number of doses for each day
+        // Create medications list with correct doses
         final medications = _doseTimes.map((doseTime) {
           return Medication(
             name: _nameController.text,
@@ -863,14 +900,15 @@ class _AddMedicationScreenState extends State<AddMedicationScreen> {
                 Colors.primaries[Random().nextInt(Colors.primaries.length)],
             date: _startDate,
             endDate: endDate,
+            finalDayDoses: finalDayDoses,
             daysTaken: _selectedDaysTaken,
             selectedDays: _selectedDaysTaken == 'selected days'
                 ? _selectedDays.toList()
                 : null,
             doseTimes: _doseTimes,
             selectedEndOption: _selectedEndOption,
-            daysAmount: daysAmountValue,
-            supplyAmount: supplyAmountValue,
+            daysAmount: _daysAmountController.text,
+            supplyAmount: _supplyAmountController.text,
             type: _selectedType,
             per: _selectedPer,
             every: _selectedEvery,
@@ -900,5 +938,74 @@ class _AddMedicationScreenState extends State<AddMedicationScreen> {
   String _getDayAbbreviation(DateTime date) {
     final days = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'];
     return days[date.weekday % 7];
+  }
+
+  // Calculate the number of doses needed for a given date
+  int _getDosesForDate(DateTime date, int fullDayDoses, int remainingDoses,
+      DateTime startDate, DateTime endDate) {
+    // If it's not the last day, return full day doses
+    if (date.isBefore(endDate)) {
+      return fullDayDoses;
+    }
+    // If it's the last day, return remaining doses
+    else if (date.isAtSameMomentAs(endDate)) {
+      return remainingDoses;
+    }
+    return 0;
+  }
+
+  // Get available dose times for a specific date
+  List<TimeOfDay> _getDoseTimesForDate(DateTime date, int dosesNeeded) {
+    // Return only the first 'dosesNeeded' times from sorted _doseTimes
+    return _doseTimes.take(dosesNeeded).toList();
+  }
+
+  // Calculate end date based on supply and doses
+  (DateTime, List<TimeOfDay>) _calculateMedicationEndDate(int totalSupply) {
+    final int dosesPerDay = _doseTimes.length;
+    final int fullDays = totalSupply ~/ dosesPerDay;
+    final int remainingDoses = totalSupply % dosesPerDay;
+
+    DateTime endDate;
+    List<TimeOfDay> finalDayDoses = [];
+
+    if (_selectedDaysTaken == 'everyday') {
+      // For everyday medication
+      endDate = _startDate.add(Duration(days: fullDays));
+      if (remainingDoses > 0) {
+        // If there are remaining doses, add them to the last day
+        finalDayDoses = _doseTimes.take(remainingDoses).toList();
+        // If we have remaining doses, we need one more day
+        endDate = endDate.add(Duration(days: 1));
+      }
+    } else {
+      // For selected days
+      if (_selectedDays.isEmpty) {
+        throw Exception(
+            'Selected days cannot be empty when days taken is "selected days"');
+      }
+
+      DateTime currentDate = _startDate;
+      int remainingSupply = totalSupply;
+
+      while (remainingSupply > 0) {
+        String dayAbbrev = _getDayAbbreviation(currentDate);
+        if (_selectedDays.contains(dayAbbrev)) {
+          if (remainingSupply >= dosesPerDay) {
+            remainingSupply -= dosesPerDay;
+          } else {
+            // Last day with partial doses
+            finalDayDoses = _doseTimes.take(remainingSupply).toList();
+            remainingSupply = 0;
+          }
+        }
+        if (remainingSupply > 0) {
+          currentDate = currentDate.add(Duration(days: 1));
+        }
+      }
+      endDate = currentDate;
+    }
+
+    return (endDate, finalDayDoses);
   }
 }

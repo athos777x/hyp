@@ -17,6 +17,7 @@ class Medication {
   final String? per;
   final String? every;
   final String? amount;
+  final List<TimeOfDay>? finalDayDoses;
 
   Medication({
     required this.name,
@@ -35,6 +36,7 @@ class Medication {
     this.per,
     this.every,
     this.amount,
+    this.finalDayDoses,
   });
 
   String get formattedTime => time;
@@ -57,6 +59,8 @@ class Medication {
         'per': per,
         'every': every,
         'amount': amount,
+        'finalDayDoses':
+            finalDayDoses?.map((t) => '${t.hour}:${t.minute}').toList(),
       };
 
   factory Medication.fromJson(Map<String, dynamic> json) => Medication(
@@ -87,5 +91,117 @@ class Medication {
         per: json['per'],
         every: json['every'],
         amount: json['amount'],
+        finalDayDoses: json['finalDayDoses'] != null
+            ? (json['finalDayDoses'] as List).map((t) {
+                final parts = t.split(':');
+                return TimeOfDay(
+                  hour: int.parse(parts[0]),
+                  minute: int.parse(parts[1]),
+                );
+              }).toList()
+            : null,
       );
+
+  Medication copyWith({
+    String? name,
+    DateTime? date,
+    DateTime? endDate,
+    String? time,
+    Color? color,
+    bool? taken,
+    List<String>? selectedDays,
+    String? daysTaken,
+    String? selectedEndOption,
+    String? daysAmount,
+    String? supplyAmount,
+    List<TimeOfDay>? doseTimes,
+    String? type,
+    String? per,
+    String? every,
+    String? amount,
+    List<TimeOfDay>? finalDayDoses,
+  }) {
+    return Medication(
+      name: name ?? this.name,
+      date: date ?? this.date,
+      endDate: endDate ?? this.endDate,
+      time: time ?? this.time,
+      color: color ?? this.color,
+      taken: taken ?? this.taken,
+      selectedDays: selectedDays ?? this.selectedDays,
+      daysTaken: daysTaken ?? this.daysTaken,
+      selectedEndOption: selectedEndOption ?? this.selectedEndOption,
+      daysAmount: daysAmount ?? this.daysAmount,
+      supplyAmount: supplyAmount ?? this.supplyAmount,
+      doseTimes: doseTimes ?? this.doseTimes,
+      type: type ?? this.type,
+      per: per ?? this.per,
+      every: every ?? this.every,
+      amount: amount ?? this.amount,
+      finalDayDoses: finalDayDoses ?? this.finalDayDoses,
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'name': name,
+      'date': date.toIso8601String(),
+      'endDate': endDate?.toIso8601String(),
+      'time': time,
+      'color': color.value,
+      'taken': taken,
+      'selectedDays': selectedDays,
+      'daysTaken': daysTaken,
+      'selectedEndOption': selectedEndOption,
+      'daysAmount': daysAmount,
+      'supplyAmount': supplyAmount,
+      'doseTimes': doseTimes?.map((t) => '${t.hour}:${t.minute}').toList(),
+      'type': type,
+      'per': per,
+      'every': every,
+      'amount': amount,
+      'finalDayDoses':
+          finalDayDoses?.map((t) => '${t.hour}:${t.minute}').toList(),
+    };
+  }
+
+  factory Medication.fromMap(Map<String, dynamic> map) {
+    return Medication(
+      name: map['name'],
+      date: DateTime.parse(map['date']),
+      endDate: map['endDate'] != null ? DateTime.parse(map['endDate']) : null,
+      time: map['time'],
+      color: Color(map['color']),
+      taken: map['taken'] ?? false,
+      selectedDays: map['selectedDays'] != null
+          ? List<String>.from(map['selectedDays'])
+          : null,
+      daysTaken: map['daysTaken'] ?? 'everyday',
+      selectedEndOption: map['selectedEndOption'],
+      daysAmount: map['daysAmount'],
+      supplyAmount: map['supplyAmount'],
+      doseTimes: map['doseTimes'] != null
+          ? (map['doseTimes'] as List).map((t) {
+              final parts = t.split(':');
+              return TimeOfDay(
+                hour: int.parse(parts[0]),
+                minute: int.parse(parts[1]),
+              );
+            }).toList()
+          : null,
+      type: map['type'],
+      per: map['per'],
+      every: map['every'],
+      amount: map['amount'],
+      finalDayDoses: map['finalDayDoses'] != null
+          ? (map['finalDayDoses'] as List).map((t) {
+              final parts = t.split(':');
+              return TimeOfDay(
+                hour: int.parse(parts[0]),
+                minute: int.parse(parts[1]),
+              );
+            }).toList()
+          : null,
+    );
+  }
 }
