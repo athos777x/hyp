@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import '../models/blood_pressure.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../services/blood_pressure_notification_service.dart';
 
 class AddMeasurementScreen extends StatefulWidget {
   final BloodPressure? measurement;
@@ -66,6 +67,9 @@ class _AddMeasurementScreenState extends State<AddMeasurementScreen> {
     final timeStrings =
         _reminderTimes.map((time) => '${time.hour}:${time.minute}').toList();
     await prefs.setStringList('reminderTimes', timeStrings);
+
+    // Schedule notifications
+    await BloodPressureNotificationService().scheduleReminders();
   }
 
   @override
