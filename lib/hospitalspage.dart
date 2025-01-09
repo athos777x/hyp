@@ -205,6 +205,9 @@ class _HospitalsPageState extends State<HospitalsPage> {
           _isLoadingLocation = false;
         });
 
+        // Center map on user's location with animation
+        _mapController.move(userLocation, 15.0);
+
         // Find nearby hospitals once we have the user's location
         await _findNearbyHospitals(userLocation);
       }
@@ -321,7 +324,12 @@ class _HospitalsPageState extends State<HospitalsPage> {
                     mapController: _mapController,
                     options: MapOptions(
                       initialCenter: _currentLocation ?? _center,
-                      initialZoom: 14.0,
+                      initialZoom: 15.0,
+                      onMapReady: () {
+                        if (_currentLocation != null) {
+                          _mapController.move(_currentLocation!, 15.0);
+                        }
+                      },
                     ),
                     children: [
                       TileLayer(
@@ -337,11 +345,11 @@ class _HospitalsPageState extends State<HospitalsPage> {
                                 if (_currentLocation != null)
                                   Marker(
                                     point: _currentLocation!,
-                                    width: 60,
-                                    height: 60,
+                                    width: 30,
+                                    height: 30,
                                     child: Container(
                                       decoration: BoxDecoration(
-                                        color: Colors.blue.withOpacity(0.4),
+                                        color: Colors.blue.withOpacity(0.2),
                                         shape: BoxShape.circle,
                                         border: Border.all(
                                           color: Colors.blue,
@@ -350,14 +358,14 @@ class _HospitalsPageState extends State<HospitalsPage> {
                                       ),
                                       child: Center(
                                         child: Container(
-                                          width: 20,
-                                          height: 20,
+                                          width: 10,
+                                          height: 10,
                                           decoration: BoxDecoration(
                                             color: Colors.blue,
                                             shape: BoxShape.circle,
                                             border: Border.all(
                                               color: Colors.white,
-                                              width: 2,
+                                              width: 1,
                                             ),
                                           ),
                                         ),
@@ -367,20 +375,54 @@ class _HospitalsPageState extends State<HospitalsPage> {
                                 // Hospital markers
                                 ...hospitals.map((hospital) => Marker(
                                       point: hospital.location,
-                                      width: 40,
-                                      height: 40,
+                                      width: 25,
+                                      height: 25,
                                       child: GestureDetector(
                                         onTap: () {
                                           setState(() {
                                             _selectedHospital = hospital;
                                           });
                                         },
-                                        child: Icon(
-                                          Icons.local_hospital,
-                                          color: _selectedHospital == hospital
-                                              ? Color(0xFF4CAF50)
-                                              : Colors.red,
-                                          size: 40,
+                                        child: Stack(
+                                          children: [
+                                            // Shadow for depth
+                                            Positioned(
+                                              right: 1,
+                                              bottom: 1,
+                                              child: Icon(
+                                                Icons.local_hospital,
+                                                color: Colors.black26,
+                                                size: 24,
+                                              ),
+                                            ),
+                                            // Main icon
+                                            Icon(
+                                              Icons.local_hospital,
+                                              color:
+                                                  _selectedHospital == hospital
+                                                      ? Color(0xFF4CAF50)
+                                                      : Colors.red,
+                                              size: 24,
+                                            ),
+                                            // Small dot for precise location
+                                            if (_selectedHospital == hospital)
+                                              Positioned(
+                                                bottom: 0,
+                                                right: 0,
+                                                child: Container(
+                                                  width: 8,
+                                                  height: 8,
+                                                  decoration: BoxDecoration(
+                                                    color: Colors.white,
+                                                    shape: BoxShape.circle,
+                                                    border: Border.all(
+                                                      color: Color(0xFF4CAF50),
+                                                      width: 1.5,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                          ],
                                         ),
                                       ),
                                     )),
