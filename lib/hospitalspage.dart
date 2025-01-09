@@ -502,76 +502,96 @@ class _HospitalsPageState extends State<HospitalsPage> {
                           ),
                         ],
                       ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: _isLoadingHospitals
-                            ? Center(
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    CircularProgressIndicator(),
-                                    SizedBox(height: 8),
-                                    Text('Finding nearby hospitals...'),
-                                  ],
-                                ),
-                              )
-                            : _selectedHospital != null
-                                ? Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        _selectedHospital!.name,
-                                        style: TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                      SizedBox(height: 8),
-                                      Text(
-                                        _selectedHospital!.address,
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          color: Colors.grey[600],
-                                        ),
-                                      ),
-                                      Text(
-                                        _selectedHospital!.phone,
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          color: Colors.grey[600],
-                                        ),
-                                      ),
-                                      SizedBox(height: 16),
-                                      SizedBox(
-                                        width: double.infinity,
-                                        child: ElevatedButton(
-                                          onPressed: () => _openDirections(
-                                              _selectedHospital!),
-                                          style: ElevatedButton.styleFrom(
-                                            backgroundColor: Color(0xFF4CAF50),
-                                            foregroundColor: Colors.white,
-                                            padding: EdgeInsets.symmetric(
-                                                vertical: 12),
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(12),
+                      child: Stack(
+                        children: [
+                          // Hospital details content
+                          Padding(
+                            padding: const EdgeInsets.all(16.0),
+                            child: _isLoadingHospitals
+                                ? Center(
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        CircularProgressIndicator(),
+                                        SizedBox(height: 8),
+                                        Text('Finding nearby hospitals...'),
+                                      ],
+                                    ),
+                                  )
+                                : _selectedHospital != null
+                                    ? Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            _selectedHospital!.name,
+                                            style: TextStyle(
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.w600,
                                             ),
                                           ),
-                                          child: Text('Get directions'),
+                                          SizedBox(height: 8),
+                                          Text(
+                                            _selectedHospital!.address,
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              color: Colors.grey[600],
+                                            ),
+                                          ),
+                                          Text(
+                                            _selectedHospital!.phone,
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              color: Colors.grey[600],
+                                            ),
+                                          ),
+                                          SizedBox(height: 16),
+                                          SizedBox(
+                                            width: double.infinity,
+                                            child: ElevatedButton(
+                                              onPressed: () => _openDirections(
+                                                  _selectedHospital!),
+                                              style: ElevatedButton.styleFrom(
+                                                backgroundColor:
+                                                    Color(0xFF4CAF50),
+                                                foregroundColor: Colors.white,
+                                                padding: EdgeInsets.symmetric(
+                                                    vertical: 12),
+                                                shape: RoundedRectangleBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(12),
+                                                ),
+                                              ),
+                                              child: Text('Get directions'),
+                                            ),
+                                          ),
+                                        ],
+                                      )
+                                    : Center(
+                                        child: Text(
+                                          'Select a hospital to see details',
+                                          style: TextStyle(
+                                            color: Colors.grey[600],
+                                            fontSize: 14,
+                                          ),
                                         ),
                                       ),
-                                    ],
-                                  )
-                                : Center(
-                                    child: Text(
-                                      'Select a hospital to see details',
-                                      style: TextStyle(
-                                        color: Colors.grey[600],
-                                        fontSize: 14,
-                                      ),
-                                    ),
-                                  ),
+                          ),
+                          // Location button overlay
+                          if (_currentLocation != null)
+                            Positioned(
+                              top: 8,
+                              right: 8,
+                              child: IconButton(
+                                onPressed: () {
+                                  _mapController.move(_currentLocation!, 15.0);
+                                },
+                                icon: Icon(Icons.my_location),
+                                color: Colors.blue,
+                                tooltip: 'Center on my location',
+                              ),
+                            ),
+                        ],
                       ),
                     ),
                   ),
@@ -581,15 +601,6 @@ class _HospitalsPageState extends State<HospitalsPage> {
           ],
         ),
       ),
-      floatingActionButton: _currentLocation != null
-          ? FloatingActionButton(
-              onPressed: () {
-                _mapController.move(_currentLocation!, 15.0);
-              },
-              backgroundColor: Colors.blue,
-              child: Icon(Icons.my_location),
-            )
-          : null,
     );
   }
 }
