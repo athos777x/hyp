@@ -134,7 +134,11 @@ class _HospitalsPageState extends State<HospitalsPage> {
           );
 
           String name = tags['name']!; // We can use ! since we checked above
-          String phone = tags['phone'] ?? tags['contact:phone'] ?? 'N/A';
+          String phone = tags['phone'] ??
+              tags['contact:phone'] ??
+              tags['phone:mobile'] ??
+              tags['contact:mobile'] ??
+              'N/A';
           String address = tags['addr:full'] ??
               [tags['addr:street'], tags['addr:housenumber'], tags['addr:city']]
                   .where((s) => s != null)
@@ -262,6 +266,34 @@ class _HospitalsPageState extends State<HospitalsPage> {
         print('Could not launch maps');
       }
     }
+  }
+
+  String _formatPhoneNumber(String phone) {
+    // Remove any non-digit characters
+    String digits = phone.replaceAll(RegExp(r'[^\d+]'), '');
+
+    // If empty or 'N/A', return as is
+    if (digits.isEmpty || phone == 'N/A') return phone;
+
+    // Replace +63 with 0
+    if (digits.startsWith('+63')) {
+      digits = '0${digits.substring(3)}';
+    }
+
+    // Format based on number length
+    if (digits.length == 11) {
+      // Mobile number
+      return '${digits.substring(0, 4)} ${digits.substring(4, 7)} ${digits.substring(7)}';
+    } else if (digits.length == 7) {
+      // Local landline without area code
+      return '${digits.substring(0, 3)} ${digits.substring(3)}';
+    } else if (digits.length == 10) {
+      // Landline with area code
+      return '(${digits.substring(0, 3)}) ${digits.substring(3, 6)} ${digits.substring(6)}';
+    }
+
+    // Return original if no format matches
+    return phone;
   }
 
   @override
@@ -539,7 +571,8 @@ class _HospitalsPageState extends State<HospitalsPage> {
                                             ),
                                           ),
                                           Text(
-                                            _selectedHospital!.phone,
+                                            _formatPhoneNumber(
+                                                _selectedHospital!.phone),
                                             style: TextStyle(
                                               fontSize: 12,
                                               color: Colors.grey[600],
