@@ -134,11 +134,21 @@ class _HospitalsPageState extends State<HospitalsPage> {
           );
 
           String name = tags['name']!; // We can use ! since we checked above
-          String phone = tags['phone'] ??
-              tags['contact:phone'] ??
-              tags['phone:mobile'] ??
-              tags['contact:mobile'] ??
-              'N/A';
+          String phone = '';
+          List<String> phoneNumbers = [];
+
+          // Collect all possible phone numbers
+          if (tags['phone'] != null) phoneNumbers.add(tags['phone']!);
+          if (tags['contact:phone'] != null)
+            phoneNumbers.add(tags['contact:phone']!);
+          if (tags['phone:mobile'] != null)
+            phoneNumbers.add(tags['phone:mobile']!);
+          if (tags['contact:mobile'] != null)
+            phoneNumbers.add(tags['contact:mobile']!);
+
+          // Join phone numbers with semicolons or use N/A if none found
+          phone = phoneNumbers.isEmpty ? 'N/A' : phoneNumbers.join(';');
+
           String address = tags['addr:full'] ??
               [tags['addr:street'], tags['addr:housenumber'], tags['addr:city']]
                   .where((s) => s != null)
@@ -269,31 +279,44 @@ class _HospitalsPageState extends State<HospitalsPage> {
   }
 
   String _formatPhoneNumber(String phone) {
-    // Remove any non-digit characters
-    String digits = phone.replaceAll(RegExp(r'[^\d+]'), '');
+    if (phone == 'N/A') return phone;
 
-    // If empty or 'N/A', return as is
-    if (digits.isEmpty || phone == 'N/A') return phone;
+    // Split by semicolons for multiple numbers
+    List<String> numbers = phone.split(';');
 
-    // Replace +63 with 0
-    if (digits.startsWith('+63')) {
-      digits = '0${digits.substring(3)}';
-    }
+    // Format each number individually
+    List<String> formattedNumbers = numbers.map((number) {
+      // Remove spaces and trim
+      String cleanNumber = number.trim();
 
-    // Format based on number length
-    if (digits.length == 11) {
-      // Mobile number
-      return '${digits.substring(0, 4)} ${digits.substring(4, 7)} ${digits.substring(7)}';
-    } else if (digits.length == 7) {
-      // Local landline without area code
-      return '${digits.substring(0, 3)} ${digits.substring(3)}';
-    } else if (digits.length == 10) {
-      // Landline with area code
-      return '(${digits.substring(0, 3)}) ${digits.substring(3, 6)} ${digits.substring(6)}';
-    }
+      // Handle +63 prefix
+      if (cleanNumber.startsWith('+63 ')) {
+        cleanNumber = '0' + cleanNumber.substring(4);
+      } else if (cleanNumber.startsWith('+63')) {
+        cleanNumber = '0' + cleanNumber.substring(3);
+      }
 
-    // Return original if no format matches
-    return phone;
+      // Remove any remaining non-digit characters
+      String digits = cleanNumber.replaceAll(RegExp(r'[^\d]'), '');
+
+      // Format based on number length
+      if (digits.length == 11) {
+        // Mobile number (e.g., 0917 123 4567)
+        return '${digits.substring(0, 4)} ${digits.substring(4, 7)} ${digits.substring(7)}';
+      } else if (digits.length == 10) {
+        // Landline with area code (e.g., 038 411 5515)
+        return '${digits.substring(0, 3)} ${digits.substring(3, 6)} ${digits.substring(6)}';
+      } else if (digits.length == 7) {
+        // Local landline without area code
+        return '${digits.substring(0, 3)} ${digits.substring(3)}';
+      }
+
+      // Return cleaned number if no format matches
+      return cleanNumber;
+    }).toList();
+
+    // Join with newlines for display
+    return formattedNumbers.join('\n');
   }
 
   @override
