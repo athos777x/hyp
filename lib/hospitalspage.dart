@@ -47,6 +47,24 @@ class _HospitalsPageState extends State<HospitalsPage> {
   LatLng? _currentLocation;
   bool _isLoadingLocation = true;
 
+  // Add zoom state
+  double _currentZoom = 15.0;
+
+  // Add method to calculate marker size based on zoom
+  double _getMarkerSize(double zoom) {
+    // Base size when zoom is 15
+    const baseSize = 25.0;
+    const baseZoom = 15.0;
+
+    // Calculate size multiplier based on zoom difference
+    double zoomDiff = baseZoom - zoom;
+    double multiplier =
+        1 + (zoomDiff * 0.2); // Adjust 0.2 to control size change rate
+
+    // Clamp the size between reasonable limits
+    return (baseSize * multiplier).clamp(20.0, 40.0);
+  }
+
   Future<void> _findNearbyHospitals(LatLng userLocation) async {
     setState(() {
       _isLoadingHospitals = true;
@@ -330,6 +348,11 @@ class _HospitalsPageState extends State<HospitalsPage> {
                           _mapController.move(_currentLocation!, 15.0);
                         }
                       },
+                      onPositionChanged: (position, hasGesture) {
+                        setState(() {
+                          _currentZoom = position.zoom!;
+                        });
+                      },
                     ),
                     children: [
                       TileLayer(
@@ -339,14 +362,15 @@ class _HospitalsPageState extends State<HospitalsPage> {
                       ),
                       MarkerLayer(
                         markers: _isLoadingHospitals
-                            ? [] // Don't show markers while loading
+                            ? []
                             : [
                                 // Current location marker
                                 if (_currentLocation != null)
                                   Marker(
                                     point: _currentLocation!,
-                                    width: 30,
-                                    height: 30,
+                                    width: _getMarkerSize(_currentZoom) *
+                                        1.2, // Slightly larger than hospital markers
+                                    height: _getMarkerSize(_currentZoom) * 1.2,
                                     child: Container(
                                       decoration: BoxDecoration(
                                         color: Colors.blue.withOpacity(0.2),
@@ -358,8 +382,10 @@ class _HospitalsPageState extends State<HospitalsPage> {
                                       ),
                                       child: Center(
                                         child: Container(
-                                          width: 10,
-                                          height: 10,
+                                          width: _getMarkerSize(_currentZoom) *
+                                              0.4,
+                                          height: _getMarkerSize(_currentZoom) *
+                                              0.4,
                                           decoration: BoxDecoration(
                                             color: Colors.blue,
                                             shape: BoxShape.circle,
@@ -375,8 +401,8 @@ class _HospitalsPageState extends State<HospitalsPage> {
                                 // Hospital markers
                                 ...hospitals.map((hospital) => Marker(
                                       point: hospital.location,
-                                      width: 25,
-                                      height: 25,
+                                      width: _getMarkerSize(_currentZoom),
+                                      height: _getMarkerSize(_currentZoom),
                                       child: GestureDetector(
                                         onTap: () {
                                           setState(() {
@@ -392,7 +418,9 @@ class _HospitalsPageState extends State<HospitalsPage> {
                                               child: Icon(
                                                 Icons.local_hospital,
                                                 color: Colors.black26,
-                                                size: 24,
+                                                size: _getMarkerSize(
+                                                        _currentZoom) *
+                                                    0.95,
                                               ),
                                             ),
                                             // Main icon
@@ -402,7 +430,9 @@ class _HospitalsPageState extends State<HospitalsPage> {
                                                   _selectedHospital == hospital
                                                       ? Color(0xFF4CAF50)
                                                       : Colors.red,
-                                              size: 24,
+                                              size:
+                                                  _getMarkerSize(_currentZoom) *
+                                                      0.95,
                                             ),
                                             // Small dot for precise location
                                             if (_selectedHospital == hospital)
@@ -410,8 +440,12 @@ class _HospitalsPageState extends State<HospitalsPage> {
                                                 bottom: 0,
                                                 right: 0,
                                                 child: Container(
-                                                  width: 8,
-                                                  height: 8,
+                                                  width: _getMarkerSize(
+                                                          _currentZoom) *
+                                                      0.3,
+                                                  height: _getMarkerSize(
+                                                          _currentZoom) *
+                                                      0.3,
                                                   decoration: BoxDecoration(
                                                     color: Colors.white,
                                                     shape: BoxShape.circle,
