@@ -79,6 +79,14 @@ class _HospitalsPageState extends State<HospitalsPage> {
         List<Hospital> nearbyHospitals = [];
 
         for (var element in data['elements']) {
+          // Get hospital details from tags first
+          var tags = element['tags'] ?? {};
+
+          // Skip if no name is provided
+          if (tags['name'] == null) {
+            continue;
+          }
+
           // Get coordinates based on element type
           double lat, lon;
           if (element['type'] == 'node') {
@@ -107,9 +115,7 @@ class _HospitalsPageState extends State<HospitalsPage> {
             hospitalLocation.longitude,
           );
 
-          // Get hospital details from tags
-          var tags = element['tags'] ?? {};
-          String name = tags['name'] ?? 'Unknown Hospital';
+          String name = tags['name']!; // We can use ! since we checked above
           String phone = tags['phone'] ?? tags['contact:phone'] ?? 'N/A';
           String address = tags['addr:full'] ??
               [tags['addr:street'], tags['addr:housenumber'], tags['addr:city']]
@@ -266,23 +272,43 @@ class _HospitalsPageState extends State<HospitalsPage> {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  if (_isLoadingHospitals)
-                    SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.grey),
-                      ),
-                    )
-                  else
-                    Text(
-                      '${hospitals.length} results',
-                      style: TextStyle(
+                  Row(
+                    children: [
+                      if (_isLoadingHospitals)
+                        SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor:
+                                AlwaysStoppedAnimation<Color>(Colors.grey),
+                          ),
+                        )
+                      else
+                        Text(
+                          '${hospitals.length} results',
+                          style: TextStyle(
+                            color: Colors.grey[600],
+                            fontSize: 14,
+                          ),
+                        ),
+                      SizedBox(
+                          width:
+                              8), // Add spacing between results and refresh button
+                      IconButton(
+                        icon: Icon(Icons.refresh),
+                        onPressed: _isLoadingHospitals
+                            ? null // Disable button while loading
+                            : () {
+                                if (_currentLocation != null) {
+                                  _findNearbyHospitals(_currentLocation!);
+                                }
+                              },
                         color: Colors.grey[600],
-                        fontSize: 14,
+                        tooltip: 'Refresh hospitals',
                       ),
-                    ),
+                    ],
+                  ),
                 ],
               ),
             ),
