@@ -147,7 +147,9 @@ class _HospitalsPageState extends State<HospitalsPage> {
             phoneNumbers.add(tags['contact:mobile']!);
 
           // Join phone numbers with semicolons or use N/A if none found
-          phone = phoneNumbers.isEmpty ? 'N/A' : phoneNumbers.join(';');
+          phone = phoneNumbers.isEmpty
+              ? 'No contact number found'
+              : phoneNumbers.join(';');
 
           String address = tags['addr:full'] ??
               [tags['addr:street'], tags['addr:housenumber'], tags['addr:city']]
@@ -279,7 +281,7 @@ class _HospitalsPageState extends State<HospitalsPage> {
   }
 
   String _formatPhoneNumber(String phone) {
-    if (phone == 'N/A') return phone;
+    if (phone == 'No contact number found') return phone;
 
     // Split by semicolons for multiple numbers
     List<String> numbers = phone.split(';');
