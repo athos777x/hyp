@@ -5,6 +5,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:geolocator/geolocator.dart';
 
 class OnBoardingScreen extends StatefulWidget {
   const OnBoardingScreen({super.key});
@@ -36,6 +37,11 @@ class OnboardingScreenState extends State<OnBoardingScreen> {
       title: "We'll help you take your medication on time!",
       buttonText: 'Allow',
       showNotificationRequest: true,
+    ),
+    OnboardingPage(
+      title: 'Help us find nearby hospitals',
+      buttonText: 'Allow Location',
+      showLocationRequest: true,
     ),
     OnboardingPage(
       title: 'Great!',
@@ -138,6 +144,46 @@ class OnboardingScreenState extends State<OnBoardingScreen> {
     );
   }
 
+  Future<void> _requestLocationPermission() async {
+    LocationPermission permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+    }
+
+    if (permission == LocationPermission.deniedForever) {
+      // Show a dialog explaining why location is needed and how to enable it
+      if (mounted) {
+        showDialog(
+          context: context,
+          builder: (BuildContext context) => AlertDialog(
+            title: const Text('Location Permission Required'),
+            content: const Text(
+                'Location permission is needed to find nearby hospitals. Please enable it in your device settings.'),
+            actions: <Widget>[
+              TextButton(
+                child: const Text('Open Settings'),
+                onPressed: () {
+                  openAppSettings();
+                  Navigator.of(context).pop();
+                },
+              ),
+              TextButton(
+                child: const Text('Skip'),
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  _pageController.nextPage(
+                    duration: const Duration(milliseconds: 300),
+                    curve: Curves.easeInOut,
+                  );
+                },
+              ),
+            ],
+          ),
+        );
+      }
+    }
+  }
+
   @override
   void dispose() {
     _nameController.dispose();
@@ -204,6 +250,11 @@ class OnboardingScreenState extends State<OnBoardingScreen> {
                             'Allow us to send notifications',
                             style: TextStyle(color: Colors.grey),
                           ),
+                        if (_pages[index].showLocationRequest)
+                          const Text(
+                            'Allow us to access your location to find nearby hospitals',
+                            style: TextStyle(color: Colors.grey),
+                          ),
                         const SizedBox(height: 10),
                         SizedBox(
                           width: double.infinity,
@@ -213,7 +264,7 @@ class OnboardingScreenState extends State<OnBoardingScreen> {
                                 if (_currentPage == 0) {
                                   if (_nameController.text.trim().isEmpty) {
                                     ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
+                                      const SnackBar(
                                           content:
                                               Text('Please enter your name')),
                                     );
@@ -224,6 +275,9 @@ class OnboardingScreenState extends State<OnBoardingScreen> {
                                 } else if (_pages[_currentPage]
                                     .showNotificationRequest) {
                                   _requestNotificationPermissions();
+                                } else if (_pages[_currentPage]
+                                    .showLocationRequest) {
+                                  _requestLocationPermission();
                                 }
                                 _pageController.nextPage(
                                   duration: const Duration(milliseconds: 300),
@@ -271,11 +325,13 @@ class OnboardingPage {
   final String buttonText;
   final bool hasTextField;
   final bool showNotificationRequest;
+  final bool showLocationRequest;
 
   OnboardingPage({
     required this.title,
     required this.buttonText,
     this.hasTextField = false,
     this.showNotificationRequest = false,
+    this.showLocationRequest = false,
   });
 }
