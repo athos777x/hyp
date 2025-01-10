@@ -16,6 +16,7 @@ class SettingsPage extends StatefulWidget {
 class _SettingsPageState extends State<SettingsPage> {
   bool alarmEnabled = true;
   bool notificationsEnabled = true;
+  bool locationEnabled = true;
   final TextEditingController _nameController = TextEditingController();
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final MedicationService _medicationService = MedicationService();
@@ -232,6 +233,12 @@ class _SettingsPageState extends State<SettingsPage> {
                       'Notifications',
                       notificationsEnabled,
                       (value) => setState(() => notificationsEnabled = value),
+                    ),
+                    Divider(height: 1, color: Colors.grey[200]),
+                    _buildSwitchTile(
+                      'Location',
+                      locationEnabled,
+                      (value) => setState(() => locationEnabled = value),
                     ),
                   ],
                 ),
