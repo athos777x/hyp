@@ -502,7 +502,7 @@ class _AddMeasurementScreenState extends State<AddMeasurementScreen> {
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton(
-        onPressed: () {
+        onPressed: () async {
           // Validate inputs
           final sys = int.tryParse(sysController.text);
           final dia = int.tryParse(diaController.text);
@@ -528,6 +528,10 @@ class _AddMeasurementScreenState extends State<AddMeasurementScreen> {
               selectedTime.minute,
             ),
           );
+
+          // Check for high blood pressure and schedule reminders if needed
+          await BloodPressureNotificationService()
+              .checkAndHandleHighBP(sys, dia);
 
           Navigator.pop(context, measurement);
         },

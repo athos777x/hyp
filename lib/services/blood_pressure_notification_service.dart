@@ -1,6 +1,7 @@
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter/material.dart';
 
 class BloodPressureNotificationService {
   static final BloodPressureNotificationService _instance =
@@ -14,6 +15,7 @@ class BloodPressureNotificationService {
   static const String _notificationChannelId = 'blood_pressure_reminders';
   static const String _notificationChannelName = 'Blood Pressure Reminders';
   static const String _lastRescheduleKey = 'last_bp_notification_reschedule';
+  static const String _highBPReminderKey = 'high_bp_reminder_active';
 
   Future<void> initialize() async {
     const androidSettings =
@@ -103,6 +105,9 @@ class BloodPressureNotificationService {
   Future<void> _scheduleNotification({
     required int id,
     required DateTime scheduledTime,
+    String title = 'Blood Pressure Reminder',
+    String body = 'Time to measure your blood pressure',
+    bool isHighBPAlert = false,
   }) async {
     final androidDetails = AndroidNotificationDetails(
       _notificationChannelId,
@@ -126,8 +131,8 @@ class BloodPressureNotificationService {
 
     await _notifications.zonedSchedule(
       id,
-      'Blood Pressure Reminder',
-      'Time to measure your blood pressure',
+      title,
+      body,
       tz.TZDateTime.from(scheduledTime, tz.local),
       details,
       androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
@@ -163,6 +168,85 @@ class BloodPressureNotificationService {
       await scheduleReminders();
       // Update last reschedule time
       await prefs.setInt(_lastRescheduleKey, now);
+    }
+  }
+
+  Future<void> scheduleHighBPReminders() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_highBPReminderKey, true);
+
+    // Cancel any existing reminders first
+    await cancelAllReminders();
+
+    // Show immediate notification about scheduled reminders
+    await _notifications.show(
+      888888, // Special ID for schedule notification
+      'Blood Pressure Monitoring',
+      'Due to high blood pressure reading, reminders have been set to measure every 4 hours for the next 24 hours.',
+      NotificationDetails(
+        android: AndroidNotificationDetails(
+          _notificationChannelId,
+          _notificationChannelName,
+          channelDescription: 'Blood pressure monitoring alerts',
+          importance: Importance.high,
+          priority: Priority.high,
+          playSound: true,
+        ),
+        iOS: const DarwinNotificationDetails(
+          presentAlert: true,
+          presentBadge: true,
+          presentSound: true,
+        ),
+      ),
+    );
+
+    // Schedule reminders every 4 hours for the next 24 hours
+    final now = DateTime.now();
+    for (int i = 1; i <= 6; i++) {
+      final scheduledTime = now.add(Duration(hours: 4 * i));
+      await _scheduleNotification(
+        id: _generateNotificationId(scheduledTime),
+        scheduledTime: scheduledTime,
+        title: 'High Blood Pressure Alert',
+        body: 'Please measure your blood pressure again',
+        isHighBPAlert: true,
+      );
+    }
+  }
+
+  Future<void> cancelHighBPReminders() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_highBPReminderKey, false);
+    await cancelAllReminders();
+  }
+
+  Future<void> checkAndHandleHighBP(int systolic, int diastolic) async {
+    if (systolic >= 180 || diastolic >= 110) {
+      // Show immediate emergency notification
+      await _notifications.show(
+        999999, // Special ID for emergency notification
+        'EMERGENCY: Critical Blood Pressure',
+        'Your blood pressure is critically high! Please call emergency hotline 117 immediately.',
+        NotificationDetails(
+          android: AndroidNotificationDetails(
+            _notificationChannelId,
+            _notificationChannelName,
+            channelDescription: 'Emergency blood pressure alerts',
+            importance: Importance.max,
+            priority: Priority.high,
+            playSound: true,
+            color: const Color(0xFFFF0000),
+            fullScreenIntent: true,
+          ),
+          iOS: const DarwinNotificationDetails(
+            presentAlert: true,
+            presentBadge: true,
+            presentSound: true,
+          ),
+        ),
+      );
+    } else if (systolic >= 140 || diastolic >= 90) {
+      await scheduleHighBPReminders();
     }
   }
 }

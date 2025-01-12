@@ -158,9 +158,18 @@ class _HealthPageState extends State<HealthPage> {
                             measurements.isEmpty
                                 ? '-/-'
                                 : '${measurements[0].systolic}/${measurements[0].diastolic}',
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w500,
+                              color: measurements.isNotEmpty
+                                  ? (measurements[0].systolic >= 180 ||
+                                          measurements[0].diastolic >= 110)
+                                      ? Colors.red
+                                      : (measurements[0].systolic >= 140 ||
+                                              measurements[0].diastolic >= 90)
+                                          ? Colors.amber[700]
+                                          : null
+                                  : null,
                             ),
                           ),
                           const SizedBox(height: 8),
@@ -247,9 +256,16 @@ class _HealthPageState extends State<HealthPage> {
                         children: [
                           Text(
                             '${measurement.systolic}/${measurement.diastolic}',
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w500,
+                              color: (measurement.systolic >= 180 ||
+                                      measurement.diastolic >= 110)
+                                  ? Colors.red
+                                  : (measurement.systolic >= 140 ||
+                                          measurement.diastolic >= 90)
+                                      ? Colors.amber[700]
+                                      : null,
                             ),
                           ),
                           Row(
