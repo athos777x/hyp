@@ -1,21 +1,21 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../models/medication.dart';
+import '../models/blood_pressure.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'auth_service.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 
-class MedicationService {
+class BloodPressureService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final AuthService _authService = AuthService();
-  static const String _key = 'medications';
+  static const String _key = 'blood_pressure_measurements';
 
-  // Save medications to SharedPreferences and Firebase if online
-  Future<void> saveMedications(List<Medication> medications) async {
+  // Save measurements to SharedPreferences and Firebase if online
+  Future<void> saveMeasurements(List<BloodPressure> measurements) async {
     // Save locally
     final prefs = await SharedPreferences.getInstance();
-    final medicationList = medications.map((med) => med.toJson()).toList();
-    await prefs.setString(_key, jsonEncode(medicationList));
+    final measurementsList = measurements.map((bp) => bp.toJson()).toList();
+    await prefs.setString(_key, jsonEncode(measurementsList));
 
     // Check connectivity
     final connectivityResult = await Connectivity().checkConnectivity();
@@ -23,38 +23,38 @@ class MedicationService {
         _authService.currentUser != null) {
       // Save to Firebase
       final batch = _firestore.batch();
-      final userMedicationsRef = _firestore
+      final userBPRef = _firestore
           .collection('users')
           .doc(_authService.currentUser!.uid)
-          .collection('medications');
+          .collection('blood_pressure');
 
-      // Delete existing medications
-      final existingMeds = await userMedicationsRef.get();
-      for (var doc in existingMeds.docs) {
+      // Delete existing measurements
+      final existingMeasurements = await userBPRef.get();
+      for (var doc in existingMeasurements.docs) {
         batch.delete(doc.reference);
       }
 
-      // Add new medications
-      for (var medication in medications) {
-        final docRef = userMedicationsRef.doc();
-        batch.set(docRef, medication.toMap());
+      // Add new measurements
+      for (var measurement in measurements) {
+        final docRef = userBPRef.doc();
+        batch.set(docRef, measurement.toJson());
       }
 
       await batch.commit();
     }
   }
 
-  // Load medications from SharedPreferences and sync with Firebase if online
-  Future<List<Medication>> loadMedications() async {
+  // Load measurements from SharedPreferences and sync with Firebase if online
+  Future<List<BloodPressure>> loadMeasurements() async {
     final prefs = await SharedPreferences.getInstance();
-    List<Medication> localMedications = [];
+    List<BloodPressure> localMeasurements = [];
 
     // Load local data
-    final medicationJson = prefs.getString(_key);
-    if (medicationJson != null) {
-      final medicationList = jsonDecode(medicationJson) as List;
-      localMedications =
-          medicationList.map((med) => Medication.fromJson(med)).toList();
+    final measurementsJson = prefs.getString(_key);
+    if (measurementsJson != null) {
+      final measurementsList = jsonDecode(measurementsJson) as List;
+      localMeasurements =
+          measurementsList.map((bp) => BloodPressure.fromJson(bp)).toList();
     }
 
     // Check connectivity and sync with Firebase if online
@@ -65,29 +65,29 @@ class MedicationService {
         final snapshot = await _firestore
             .collection('users')
             .doc(_authService.currentUser!.uid)
-            .collection('medications')
+            .collection('blood_pressure')
             .get();
 
         if (snapshot.docs.isNotEmpty) {
-          final medications = snapshot.docs.map((doc) {
+          final measurements = snapshot.docs.map((doc) {
             final data = doc.data();
-            return Medication.fromMap(data);
+            return BloodPressure.fromJson(data);
           }).toList();
 
           // Update local storage with Firebase data
-          await saveMedications(medications);
-          return medications;
+          await saveMeasurements(measurements);
+          return measurements;
         }
       } catch (e) {
         print('Error syncing with Firebase: $e');
       }
     }
 
-    return localMedications;
+    return localMeasurements;
   }
 
-  // Clear medications from SharedPreferences and Firebase if online
-  Future<void> clearMedications() async {
+  // Clear measurements from SharedPreferences and Firebase if online
+  Future<void> clearMeasurements() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_key);
 
@@ -95,12 +95,12 @@ class MedicationService {
     if (connectivityResult != ConnectivityResult.none &&
         _authService.currentUser != null) {
       try {
-        final userMedicationsRef = _firestore
+        final userBPRef = _firestore
             .collection('users')
             .doc(_authService.currentUser!.uid)
-            .collection('medications');
+            .collection('blood_pressure');
 
-        final snapshot = await userMedicationsRef.get();
+        final snapshot = await userBPRef.get();
         final batch = _firestore.batch();
 
         for (var doc in snapshot.docs) {
@@ -109,7 +109,7 @@ class MedicationService {
 
         await batch.commit();
       } catch (e) {
-        print('Error clearing Firebase medications: $e');
+        print('Error clearing Firebase blood pressure measurements: $e');
       }
     }
   }
@@ -119,29 +119,29 @@ class MedicationService {
     if (_authService.currentUser == null) return;
 
     final prefs = await SharedPreferences.getInstance();
-    final medicationJson = prefs.getString(_key);
+    final measurementsJson = prefs.getString(_key);
 
-    if (medicationJson != null) {
-      final medicationList = jsonDecode(medicationJson) as List;
-      final medications =
-          medicationList.map((med) => Medication.fromJson(med)).toList();
+    if (measurementsJson != null) {
+      final measurementsList = jsonDecode(measurementsJson) as List;
+      final measurements =
+          measurementsList.map((bp) => BloodPressure.fromJson(bp)).toList();
 
       final batch = _firestore.batch();
-      final userMedicationsRef = _firestore
+      final userBPRef = _firestore
           .collection('users')
           .doc(_authService.currentUser!.uid)
-          .collection('medications');
+          .collection('blood_pressure');
 
-      // Delete existing medications
-      final existingMeds = await userMedicationsRef.get();
-      for (var doc in existingMeds.docs) {
+      // Delete existing measurements
+      final existingMeasurements = await userBPRef.get();
+      for (var doc in existingMeasurements.docs) {
         batch.delete(doc.reference);
       }
 
-      // Add new medications
-      for (var medication in medications) {
-        final docRef = userMedicationsRef.doc();
-        batch.set(docRef, medication.toMap());
+      // Add new measurements
+      for (var measurement in measurements) {
+        final docRef = userBPRef.doc();
+        batch.set(docRef, measurement.toJson());
       }
 
       await batch.commit();

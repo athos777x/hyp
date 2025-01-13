@@ -6,17 +6,27 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'services/notification_service.dart';
 import 'services/medication_service.dart';
 import 'services/blood_pressure_notification_service.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'firebase_options.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+
+  // Configure Firestore settings for offline persistence
+  FirebaseFirestore.instance.settings = const Settings(
+    persistenceEnabled: true,
+    cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
+  );
 
   // Initialize notification services
   await NotificationService().initialize();
   await BloodPressureNotificationService().initialize();
 
   // Get medications and check/reschedule notifications
-  final medications = await MedicationService().getMedications();
+  final medications = await MedicationService().loadMedications();
   await NotificationService().checkAndRescheduleNotifications(medications);
 
   // Check and reschedule blood pressure reminders
