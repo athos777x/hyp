@@ -34,8 +34,15 @@ class MedicationService {
         batch.delete(doc.reference);
       }
 
-      // Add new medications
+      // Create a map to group medications by name
+      final Map<String, Medication> uniqueMedications = {};
       for (var medication in medications) {
+        // Use the name as the key to ensure uniqueness
+        uniqueMedications[medication.name] = medication;
+      }
+
+      // Add medications to Firebase (one document per unique medication)
+      for (var medication in uniqueMedications.values) {
         final docRef = userMedicationsRef.doc();
         batch.set(docRef, medication.toMap());
       }
