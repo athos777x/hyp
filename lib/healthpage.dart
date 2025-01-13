@@ -1,14 +1,12 @@
 import 'package:flutter/material.dart';
 import 'screens/add_measurement_screen.dart';
 import 'models/blood_pressure.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl/intl.dart';
-import 'dart:convert';
+import 'services/blood_pressure_service.dart';
 
 class HealthPage extends StatefulWidget {
   static Future<void> clearMeasurements() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove('measurements');
+    await BloodPressureService().clearMeasurements();
   }
 
   @override
@@ -17,6 +15,7 @@ class HealthPage extends StatefulWidget {
 
 class _HealthPageState extends State<HealthPage> {
   List<BloodPressure> measurements = [];
+  final BloodPressureService _bloodPressureService = BloodPressureService();
 
   @override
   void initState() {
@@ -25,32 +24,14 @@ class _HealthPageState extends State<HealthPage> {
   }
 
   Future<void> _loadMeasurements() async {
-    final prefs = await SharedPreferences.getInstance();
-    final measurementsJson = prefs.getStringList('measurements') ?? [];
-
+    final loadedMeasurements = await _bloodPressureService.loadMeasurements();
     setState(() {
-      measurements = measurementsJson.map((json) {
-        final map = jsonDecode(json);
-        return BloodPressure(
-          systolic: map['systolic'],
-          diastolic: map['diastolic'],
-          timestamp: DateTime.parse(map['timestamp']),
-        );
-      }).toList();
+      measurements = loadedMeasurements;
     });
   }
 
   Future<void> _saveMeasurements() async {
-    final prefs = await SharedPreferences.getInstance();
-    final measurementsJson = measurements.map((measurement) {
-      return jsonEncode({
-        'systolic': measurement.systolic,
-        'diastolic': measurement.diastolic,
-        'timestamp': measurement.timestamp.toIso8601String(),
-      });
-    }).toList();
-
-    await prefs.setStringList('measurements', measurementsJson);
+    await _bloodPressureService.saveMeasurements(measurements);
   }
 
   void _showMeasurementOptions(int index, BloodPressure measurement) {
