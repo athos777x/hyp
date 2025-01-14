@@ -12,105 +12,131 @@ class BloodPressureService {
 
   // Save measurements to SharedPreferences and Firebase if online
   Future<void> saveMeasurements(List<BloodPressure> measurements) async {
-    // Save locally
-    final prefs = await SharedPreferences.getInstance();
-    final measurementsList = measurements.map((bp) => bp.toJson()).toList();
-    await prefs.setString(_key, jsonEncode(measurementsList));
+    try {
+      // Always save locally first
+      final prefs = await SharedPreferences.getInstance();
+      final measurementsList = measurements.map((bp) => bp.toJson()).toList();
+      await prefs.setString(_key, jsonEncode(measurementsList));
 
-    // Check connectivity
-    final connectivityResult = await Connectivity().checkConnectivity();
-    if (connectivityResult != ConnectivityResult.none &&
-        _authService.currentUser != null) {
-      // Save to Firebase
-      final batch = _firestore.batch();
-      final userBPRef = _firestore
-          .collection('users')
-          .doc(_authService.currentUser!.uid)
-          .collection('blood_pressure');
+      // Try to save to Firebase if online and authenticated
+      final connectivityResult = await Connectivity().checkConnectivity();
+      if (connectivityResult != ConnectivityResult.none &&
+          _authService.currentUser != null) {
+        try {
+          final batch = _firestore.batch();
+          final userBPRef = _firestore
+              .collection('users')
+              .doc(_authService.currentUser!.uid)
+              .collection('blood_pressure');
 
-      // Delete existing measurements
-      final existingMeasurements = await userBPRef.get();
-      for (var doc in existingMeasurements.docs) {
-        batch.delete(doc.reference);
+          // Delete existing measurements
+          final existingMeasurements = await userBPRef.get();
+          for (var doc in existingMeasurements.docs) {
+            batch.delete(doc.reference);
+          }
+
+          // Add new measurements
+          for (var measurement in measurements) {
+            final docRef = userBPRef.doc();
+            batch.set(docRef, measurement.toJson());
+          }
+
+          await batch.commit();
+        } catch (e) {
+          print('Error saving to Firebase: $e');
+          // Continue even if Firebase save fails
+          // Local save is already done
+        }
       }
-
-      // Add new measurements
-      for (var measurement in measurements) {
-        final docRef = userBPRef.doc();
-        batch.set(docRef, measurement.toJson());
-      }
-
-      await batch.commit();
+    } catch (e) {
+      print('Error in saveMeasurements: $e');
+      // Rethrow if even local save fails
+      rethrow;
     }
   }
 
   // Load measurements from SharedPreferences and sync with Firebase if online
   Future<List<BloodPressure>> loadMeasurements() async {
-    final prefs = await SharedPreferences.getInstance();
-    List<BloodPressure> localMeasurements = [];
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      List<BloodPressure> localMeasurements = [];
 
-    // Load local data
-    final measurementsJson = prefs.getString(_key);
-    if (measurementsJson != null) {
-      final measurementsList = jsonDecode(measurementsJson) as List;
-      localMeasurements =
-          measurementsList.map((bp) => BloodPressure.fromJson(bp)).toList();
-    }
-
-    // Check connectivity and sync with Firebase if online
-    final connectivityResult = await Connectivity().checkConnectivity();
-    if (connectivityResult != ConnectivityResult.none &&
-        _authService.currentUser != null) {
-      try {
-        final snapshot = await _firestore
-            .collection('users')
-            .doc(_authService.currentUser!.uid)
-            .collection('blood_pressure')
-            .get();
-
-        if (snapshot.docs.isNotEmpty) {
-          final measurements = snapshot.docs.map((doc) {
-            final data = doc.data();
-            return BloodPressure.fromJson(data);
-          }).toList();
-
-          // Update local storage with Firebase data
-          await saveMeasurements(measurements);
-          return measurements;
-        }
-      } catch (e) {
-        print('Error syncing with Firebase: $e');
+      // Load local data
+      final measurementsJson = prefs.getString(_key);
+      if (measurementsJson != null) {
+        final measurementsList = jsonDecode(measurementsJson) as List;
+        localMeasurements =
+            measurementsList.map((bp) => BloodPressure.fromJson(bp)).toList();
       }
-    }
 
-    return localMeasurements;
+      // Try to sync with Firebase if online
+      final connectivityResult = await Connectivity().checkConnectivity();
+      if (connectivityResult != ConnectivityResult.none &&
+          _authService.currentUser != null) {
+        try {
+          final snapshot = await _firestore
+              .collection('users')
+              .doc(_authService.currentUser!.uid)
+              .collection('blood_pressure')
+              .get();
+
+          if (snapshot.docs.isNotEmpty) {
+            final measurements = snapshot.docs.map((doc) {
+              final data = doc.data();
+              return BloodPressure.fromJson(data);
+            }).toList();
+
+            // Update local storage with Firebase data
+            await saveMeasurements(measurements);
+            return measurements;
+          }
+        } catch (e) {
+          print('Error syncing with Firebase: $e');
+          // Return local data if Firebase sync fails
+        }
+      }
+
+      return localMeasurements;
+    } catch (e) {
+      print('Error in loadMeasurements: $e');
+      // Return empty list if everything fails
+      return [];
+    }
   }
 
   // Clear measurements from SharedPreferences and Firebase if online
   Future<void> clearMeasurements() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_key);
+    try {
+      // Clear local data first
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(_key);
 
-    final connectivityResult = await Connectivity().checkConnectivity();
-    if (connectivityResult != ConnectivityResult.none &&
-        _authService.currentUser != null) {
-      try {
-        final userBPRef = _firestore
-            .collection('users')
-            .doc(_authService.currentUser!.uid)
-            .collection('blood_pressure');
+      // Try to clear Firebase data if online
+      final connectivityResult = await Connectivity().checkConnectivity();
+      if (connectivityResult != ConnectivityResult.none &&
+          _authService.currentUser != null) {
+        try {
+          final userBPRef = _firestore
+              .collection('users')
+              .doc(_authService.currentUser!.uid)
+              .collection('blood_pressure');
 
-        final snapshot = await userBPRef.get();
-        final batch = _firestore.batch();
+          final snapshot = await userBPRef.get();
+          final batch = _firestore.batch();
 
-        for (var doc in snapshot.docs) {
-          batch.delete(doc.reference);
+          for (var doc in snapshot.docs) {
+            batch.delete(doc.reference);
+          }
+
+          await batch.commit();
+        } catch (e) {
+          print('Error clearing Firebase blood pressure measurements: $e');
+          // Continue even if Firebase clear fails
         }
-
-        await batch.commit();
-      } catch (e) {
-        print('Error clearing Firebase blood pressure measurements: $e');
       }
+    } catch (e) {
+      print('Error in clearMeasurements: $e');
+      rethrow;
     }
   }
 
@@ -118,33 +144,38 @@ class BloodPressureService {
   Future<void> syncWithFirebase() async {
     if (_authService.currentUser == null) return;
 
-    final prefs = await SharedPreferences.getInstance();
-    final measurementsJson = prefs.getString(_key);
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final measurementsJson = prefs.getString(_key);
 
-    if (measurementsJson != null) {
-      final measurementsList = jsonDecode(measurementsJson) as List;
-      final measurements =
-          measurementsList.map((bp) => BloodPressure.fromJson(bp)).toList();
+      if (measurementsJson != null) {
+        final measurementsList = jsonDecode(measurementsJson) as List;
+        final measurements =
+            measurementsList.map((bp) => BloodPressure.fromJson(bp)).toList();
 
-      final batch = _firestore.batch();
-      final userBPRef = _firestore
-          .collection('users')
-          .doc(_authService.currentUser!.uid)
-          .collection('blood_pressure');
+        final batch = _firestore.batch();
+        final userBPRef = _firestore
+            .collection('users')
+            .doc(_authService.currentUser!.uid)
+            .collection('blood_pressure');
 
-      // Delete existing measurements
-      final existingMeasurements = await userBPRef.get();
-      for (var doc in existingMeasurements.docs) {
-        batch.delete(doc.reference);
+        // Delete existing measurements
+        final existingMeasurements = await userBPRef.get();
+        for (var doc in existingMeasurements.docs) {
+          batch.delete(doc.reference);
+        }
+
+        // Add new measurements
+        for (var measurement in measurements) {
+          final docRef = userBPRef.doc();
+          batch.set(docRef, measurement.toJson());
+        }
+
+        await batch.commit();
       }
-
-      // Add new measurements
-      for (var measurement in measurements) {
-        final docRef = userBPRef.doc();
-        batch.set(docRef, measurement.toJson());
-      }
-
-      await batch.commit();
+    } catch (e) {
+      print('Error in syncWithFirebase: $e');
+      // Continue even if sync fails
     }
   }
 }

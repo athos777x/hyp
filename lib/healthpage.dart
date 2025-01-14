@@ -3,6 +3,8 @@ import 'screens/add_measurement_screen.dart';
 import 'models/blood_pressure.dart';
 import 'package:intl/intl.dart';
 import 'services/blood_pressure_service.dart';
+import 'services/event_bus_service.dart';
+import 'dart:async';
 
 class HealthPage extends StatefulWidget {
   static Future<void> clearMeasurements() async {
@@ -16,11 +18,24 @@ class HealthPage extends StatefulWidget {
 class _HealthPageState extends State<HealthPage> {
   List<BloodPressure> measurements = [];
   final BloodPressureService _bloodPressureService = BloodPressureService();
+  late StreamSubscription _bloodPressureUpdateSubscription;
 
   @override
   void initState() {
     super.initState();
+
+    // Add subscription to blood pressure updates
+    _bloodPressureUpdateSubscription = EventBusService()
+        .bloodPressureUpdateStream
+        .listen((_) => _loadMeasurements());
+
     _loadMeasurements();
+  }
+
+  @override
+  void dispose() {
+    _bloodPressureUpdateSubscription.cancel();
+    super.dispose();
   }
 
   Future<void> _loadMeasurements() async {
@@ -32,6 +47,7 @@ class _HealthPageState extends State<HealthPage> {
 
   Future<void> _saveMeasurements() async {
     await _bloodPressureService.saveMeasurements(measurements);
+    EventBusService().notifyBloodPressureUpdate();
   }
 
   void _showMeasurementOptions(int index, BloodPressure measurement) {

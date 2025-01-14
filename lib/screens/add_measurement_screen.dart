@@ -516,24 +516,33 @@ class _AddMeasurementScreenState extends State<AddMeasurementScreen> {
             return;
           }
 
-          // Create and return the measurement
-          final measurement = BloodPressure(
-            systolic: sys,
-            diastolic: dia,
-            timestamp: DateTime(
-              selectedDate.year,
-              selectedDate.month,
-              selectedDate.day,
-              selectedTime.hour,
-              selectedTime.minute,
-            ),
-          );
+          try {
+            // Create the measurement
+            final measurement = BloodPressure(
+              systolic: sys,
+              diastolic: dia,
+              timestamp: DateTime(
+                selectedDate.year,
+                selectedDate.month,
+                selectedDate.day,
+                selectedTime.hour,
+                selectedTime.minute,
+              ),
+            );
 
-          // Check for high blood pressure and schedule reminders if needed
-          await BloodPressureNotificationService()
-              .checkAndHandleHighBP(sys, dia);
+            // Check for high blood pressure and schedule reminders if needed
+            await BloodPressureNotificationService()
+                .checkAndHandleHighBP(sys, dia);
 
-          Navigator.pop(context, measurement);
+            Navigator.pop(context, measurement);
+          } catch (e) {
+            print('Error adding measurement: $e');
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Error adding measurement. Please try again.'),
+              ),
+            );
+          }
         },
         style: ElevatedButton.styleFrom(
           backgroundColor: Color(0xFF4CAF50),
