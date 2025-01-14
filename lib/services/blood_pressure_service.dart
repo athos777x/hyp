@@ -29,16 +29,34 @@ class BloodPressureService {
               .doc(_authService.currentUser!.uid)
               .collection('blood_pressure');
 
-          // Delete existing measurements
+          // Get existing measurements from Firebase
           final existingMeasurements = await userBPRef.get();
+
+          // Create a map of existing measurements by ID
+          Map<String, DocumentSnapshot> existingMeasurementsMap = {};
           for (var doc in existingMeasurements.docs) {
-            batch.delete(doc.reference);
+            final measurement =
+                BloodPressure.fromJson(doc.data() as Map<String, dynamic>);
+            existingMeasurementsMap[measurement.id] = doc;
           }
 
-          // Add new measurements
+          // Update or add measurements
           for (var measurement in measurements) {
-            final docRef = userBPRef.doc();
-            batch.set(docRef, measurement.toJson());
+            if (existingMeasurementsMap.containsKey(measurement.id)) {
+              // Update existing measurement
+              batch.update(existingMeasurementsMap[measurement.id]!.reference,
+                  measurement.toJson());
+              existingMeasurementsMap.remove(measurement.id);
+            } else {
+              // Add new measurement
+              final docRef = userBPRef.doc();
+              batch.set(docRef, measurement.toJson());
+            }
+          }
+
+          // Delete measurements that no longer exist locally
+          for (var doc in existingMeasurementsMap.values) {
+            batch.delete(doc.reference);
           }
 
           await batch.commit();
@@ -55,11 +73,12 @@ class BloodPressureService {
     }
   }
 
-  // Load measurements from SharedPreferences and sync with Firebase if online
+  // Load measurements from SharedPreferences and merge with Firebase if online
   Future<List<BloodPressure>> loadMeasurements() async {
     try {
       final prefs = await SharedPreferences.getInstance();
       List<BloodPressure> localMeasurements = [];
+      Map<String, BloodPressure> measurementsMap = {};
 
       // Load local data
       final measurementsJson = prefs.getString(_key);
@@ -67,6 +86,10 @@ class BloodPressureService {
         final measurementsList = jsonDecode(measurementsJson) as List;
         localMeasurements =
             measurementsList.map((bp) => BloodPressure.fromJson(bp)).toList();
+        // Add local measurements to map
+        for (var measurement in localMeasurements) {
+          measurementsMap[measurement.id] = measurement;
+        }
       }
 
       // Try to sync with Firebase if online
@@ -81,15 +104,23 @@ class BloodPressureService {
               .get();
 
           if (snapshot.docs.isNotEmpty) {
-            final measurements = snapshot.docs.map((doc) {
-              final data = doc.data();
-              return BloodPressure.fromJson(data);
-            }).toList();
-
-            // Update local storage with Firebase data
-            await saveMeasurements(measurements);
-            return measurements;
+            // Merge Firebase data with local data
+            for (var doc in snapshot.docs) {
+              final measurement = BloodPressure.fromJson(doc.data());
+              // Only update if measurement doesn't exist locally or is older
+              if (!measurementsMap.containsKey(measurement.id)) {
+                measurementsMap[measurement.id] = measurement;
+              }
+            }
           }
+
+          // Convert map back to list and sort by timestamp
+          final mergedMeasurements = measurementsMap.values.toList()
+            ..sort((a, b) => b.timestamp.compareTo(a.timestamp));
+
+          // Save merged data back to local storage
+          await saveMeasurements(mergedMeasurements);
+          return mergedMeasurements;
         } catch (e) {
           print('Error syncing with Firebase: $e');
           // Return local data if Firebase sync fails
