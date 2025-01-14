@@ -531,8 +531,13 @@ class _AddMeasurementScreenState extends State<AddMeasurementScreen> {
             );
 
             // Check for high blood pressure and schedule reminders if needed
-            await BloodPressureNotificationService()
-                .checkAndHandleHighBP(sys, dia);
+            try {
+              await BloodPressureNotificationService()
+                  .checkAndHandleHighBP(sys, dia);
+            } catch (e) {
+              print('Error scheduling notifications: $e');
+              // Continue even if notification scheduling fails
+            }
 
             Navigator.pop(context, measurement);
           } catch (e) {

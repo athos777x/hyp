@@ -221,32 +221,45 @@ class BloodPressureNotificationService {
   }
 
   Future<void> checkAndHandleHighBP(int systolic, int diastolic) async {
-    if (systolic >= 180 || diastolic >= 110) {
-      // Show immediate emergency notification
-      await _notifications.show(
-        999999, // Special ID for emergency notification
-        'EMERGENCY: Critical Blood Pressure',
-        'Your blood pressure is critically high! Please call emergency hotline 117 immediately.',
-        NotificationDetails(
-          android: AndroidNotificationDetails(
-            _notificationChannelId,
-            _notificationChannelName,
-            channelDescription: 'Emergency blood pressure alerts',
-            importance: Importance.max,
-            priority: Priority.high,
-            playSound: true,
-            color: const Color(0xFFFF0000),
-            fullScreenIntent: true,
+    try {
+      if (systolic >= 180 || diastolic >= 110) {
+        // Show immediate emergency notification
+        await _notifications
+            .show(
+          999999, // Special ID for emergency notification
+          'EMERGENCY: Critical Blood Pressure',
+          'Your blood pressure is critically high! Please call emergency hotline 117 immediately.',
+          NotificationDetails(
+            android: AndroidNotificationDetails(
+              _notificationChannelId,
+              _notificationChannelName,
+              channelDescription: 'Emergency blood pressure alerts',
+              importance: Importance.max,
+              priority: Priority.high,
+              playSound: true,
+              color: const Color(0xFFFF0000),
+              fullScreenIntent: true,
+            ),
+            iOS: const DarwinNotificationDetails(
+              presentAlert: true,
+              presentBadge: true,
+              presentSound: true,
+            ),
           ),
-          iOS: const DarwinNotificationDetails(
-            presentAlert: true,
-            presentBadge: true,
-            presentSound: true,
-          ),
-        ),
-      );
-    } else if (systolic >= 140 || diastolic >= 90) {
-      await scheduleHighBPReminders();
+        )
+            .catchError((e) {
+          print('Error showing emergency notification: $e');
+        });
+      } else if (systolic >= 140 || diastolic >= 90) {
+        try {
+          await scheduleHighBPReminders();
+        } catch (e) {
+          print('Error scheduling high BP reminders: $e');
+        }
+      }
+    } catch (e) {
+      print('Error in checkAndHandleHighBP: $e');
+      // Don't rethrow - allow the measurement to be saved even if notifications fail
     }
   }
 }
