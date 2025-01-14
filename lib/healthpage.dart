@@ -106,12 +106,30 @@ class _HealthPageState extends State<HealthPage> {
               title: const Text('Delete measurement'),
               onTap: () async {
                 Navigator.pop(context);
-                final updatedMeasurements =
-                    List<BloodPressure>.from(measurements);
-                updatedMeasurements.removeWhere((m) => m.id == measurement.id);
-                await _bloodPressureService
-                    .saveMeasurements(updatedMeasurements);
-                EventBusService().notifyBloodPressureUpdate();
+                try {
+                  // Update local state first
+                  final updatedMeasurements =
+                      List<BloodPressure>.from(measurements);
+                  updatedMeasurements
+                      .removeWhere((m) => m.id == measurement.id);
+
+                  // Track the deleted measurement
+                  await _bloodPressureService.deleteMeasurement(measurement.id);
+
+                  // Save changes
+                  await _bloodPressureService
+                      .saveMeasurements(updatedMeasurements);
+                  EventBusService().notifyBloodPressureUpdate();
+                } catch (e) {
+                  print('Error deleting measurement: $e');
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content:
+                          Text('Changes saved locally. Will sync when online.'),
+                      duration: Duration(seconds: 2),
+                    ),
+                  );
+                }
               },
             ),
           ],

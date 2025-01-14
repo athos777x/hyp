@@ -365,12 +365,26 @@ class _MedicationsPageState extends State<MedicationsPage> {
                   );
 
                   if (result != null && result is List<Medication>) {
-                    setState(() {
-                      _medications.removeWhere((m) => m.name == medicationName);
-                      _medications.addAll(result);
-                    });
-                    await _medicationService.saveMedications(_medications);
-                    EventBusService().notifyMedicationUpdate();
+                    try {
+                      // Update local state first
+                      setState(() {
+                        _medications
+                            .removeWhere((m) => m.name == medicationName);
+                        _medications.addAll(result);
+                      });
+                      // Try to save changes
+                      await _medicationService.saveMedications(_medications);
+                      EventBusService().notifyMedicationUpdate();
+                    } catch (e) {
+                      print('Error saving medication edit: $e');
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                              'Changes saved locally. Will sync when online.'),
+                          duration: Duration(seconds: 2),
+                        ),
+                      );
+                    }
                   }
                 }
               },
@@ -380,16 +394,34 @@ class _MedicationsPageState extends State<MedicationsPage> {
               title: const Text('Delete medication'),
               onTap: () async {
                 Navigator.pop(context);
-                // Cancel notifications for this medication
-                await NotificationService()
-                    .cancelMedicationNotifications(medicationName);
+                try {
+                  // Update local state first
+                  setState(() {
+                    _medications.removeWhere((m) => m.name == medicationName);
+                  });
 
-                setState(() {
-                  _medications.removeWhere((m) => m.name == medicationName);
-                });
-                await _medicationService.saveMedications(_medications);
-                EventBusService().notifyMedicationUpdate();
-                _loadMedications();
+                  // Track the deleted medication
+                  await _medicationService.deleteMedication(medicationName);
+
+                  // Try to save changes and cancel notifications
+                  await Future.wait([
+                    _medicationService.saveMedications(_medications),
+                    NotificationService()
+                        .cancelMedicationNotifications(medicationName),
+                  ]);
+
+                  EventBusService().notifyMedicationUpdate();
+                  _loadMedications();
+                } catch (e) {
+                  print('Error deleting medication: $e');
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content:
+                          Text('Changes saved locally. Will sync when online.'),
+                      duration: Duration(seconds: 2),
+                    ),
+                  );
+                }
               },
             ),
           ],

@@ -9,6 +9,7 @@ class BloodPressureService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final AuthService _authService = AuthService();
   static const String _key = 'blood_pressure_measurements';
+  static const String _deletedKey = 'deleted_blood_pressure_measurements';
 
   // Save measurements to SharedPreferences and Firebase if online
   Future<void> saveMeasurements(List<BloodPressure> measurements) async {
@@ -63,12 +64,10 @@ class BloodPressureService {
         } catch (e) {
           print('Error saving to Firebase: $e');
           // Continue even if Firebase save fails
-          // Local save is already done
         }
       }
     } catch (e) {
       print('Error in saveMeasurements: $e');
-      // Rethrow if even local save fails
       rethrow;
     }
   }
@@ -79,6 +78,8 @@ class BloodPressureService {
       final prefs = await SharedPreferences.getInstance();
       List<BloodPressure> localMeasurements = [];
       Map<String, BloodPressure> measurementsMap = {};
+      Set<String> deletedMeasurements =
+          Set<String>.from(prefs.getStringList(_deletedKey) ?? []);
 
       // Load local data
       final measurementsJson = prefs.getString(_key);
@@ -107,20 +108,30 @@ class BloodPressureService {
             // Merge Firebase data with local data
             for (var doc in snapshot.docs) {
               final measurement = BloodPressure.fromJson(doc.data());
-              // Only update if measurement doesn't exist locally or is older
+              // Skip if measurement was deleted locally
+              if (deletedMeasurements.contains(measurement.id)) {
+                continue;
+              }
+              // Only update if measurement doesn't exist locally
               if (!measurementsMap.containsKey(measurement.id)) {
                 measurementsMap[measurement.id] = measurement;
               }
             }
+
+            // Convert map back to list and sort by timestamp
+            final mergedMeasurements = measurementsMap.values.toList()
+              ..sort((a, b) => b.timestamp.compareTo(a.timestamp));
+
+            // Save merged data back to local storage
+            await saveMeasurements(mergedMeasurements);
+
+            // Clear deleted measurements list if sync successful
+            if (deletedMeasurements.isNotEmpty) {
+              await prefs.setStringList(_deletedKey, []);
+            }
+
+            return mergedMeasurements;
           }
-
-          // Convert map back to list and sort by timestamp
-          final mergedMeasurements = measurementsMap.values.toList()
-            ..sort((a, b) => b.timestamp.compareTo(a.timestamp));
-
-          // Save merged data back to local storage
-          await saveMeasurements(mergedMeasurements);
-          return mergedMeasurements;
         } catch (e) {
           print('Error syncing with Firebase: $e');
           // Return local data if Firebase sync fails
@@ -130,9 +141,18 @@ class BloodPressureService {
       return localMeasurements;
     } catch (e) {
       print('Error in loadMeasurements: $e');
-      // Return empty list if everything fails
       return [];
     }
+  }
+
+  // Track deleted measurement
+  Future<void> deleteMeasurement(String measurementId) async {
+    final prefs = await SharedPreferences.getInstance();
+    final deletedMeasurements =
+        Set<String>.from(prefs.getStringList(_deletedKey) ?? []);
+
+    deletedMeasurements.add(measurementId);
+    await prefs.setStringList(_deletedKey, deletedMeasurements.toList());
   }
 
   // Clear measurements from SharedPreferences and Firebase if online
