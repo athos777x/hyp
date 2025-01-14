@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import '/homepage.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:geolocator/geolocator.dart';
+import 'services/auth_service.dart';
 
 class OnBoardingScreen extends StatefulWidget {
   const OnBoardingScreen({super.key});
@@ -17,7 +17,7 @@ class OnBoardingScreen extends StatefulWidget {
 class OnboardingScreenState extends State<OnBoardingScreen> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
-  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final AuthService _authService = AuthService();
   final TextEditingController _nameController = TextEditingController();
   final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
       FlutterLocalNotificationsPlugin();
@@ -51,22 +51,30 @@ class OnboardingScreenState extends State<OnBoardingScreen> {
 
   Future<void> _signInAnonymously() async {
     try {
-      final UserCredential userCredential = await _auth.signInAnonymously();
+      final UserCredential userCredential =
+          await _authService.signInAnonymously();
 
       print('Signing in with name: ${_nameController.text}');
 
       if (_nameController.text.isNotEmpty) {
-        await FirebaseFirestore.instance
-            .collection('users')
-            .doc(userCredential.user!.uid)
-            .set({
-          'name': _nameController.text.trim(),
-          'createdAt': FieldValue.serverTimestamp(),
-        });
-        print('Successfully saved name to Firestore');
+        await _authService.createUserInFirestore(
+          userCredential.user!.uid,
+          _nameController.text.trim(),
+          '', // No email for anonymous users
+        );
+        print('Successfully saved name locally and to Firestore if online');
       }
     } catch (e) {
       print('Error signing in anonymously: $e');
+      // Even if Firebase auth fails, save user data locally
+      if (_nameController.text.isNotEmpty) {
+        await _authService.createUserInFirestore(
+          'offline_${DateTime.now().millisecondsSinceEpoch}',
+          _nameController.text.trim(),
+          '', // No email for anonymous users
+        );
+        print('Saved user data locally due to offline/error state');
+      }
     }
   }
 

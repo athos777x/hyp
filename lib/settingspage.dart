@@ -7,6 +7,7 @@ import 'onboarding_screen.dart';
 import 'services/medication_service.dart';
 import '../healthpage.dart';
 import 'services/notification_service.dart';
+import 'services/auth_service.dart';
 
 class SettingsPage extends StatefulWidget {
   @override
@@ -20,53 +21,43 @@ class _SettingsPageState extends State<SettingsPage> {
   final TextEditingController _nameController = TextEditingController();
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final MedicationService _medicationService = MedicationService();
+  final AuthService _authService = AuthService();
+  String _userName = '';
+  String _userEmail = '';
 
   @override
   void initState() {
     super.initState();
-    _loadUserName();
+    _loadUserData();
   }
 
-  Future<void> _loadUserName() async {
+  Future<void> _loadUserData() async {
     try {
-      final userId = _auth.currentUser?.uid;
-      print('Current user ID: $userId');
-
-      if (userId != null) {
-        final userData = await FirebaseFirestore.instance
-            .collection('users')
-            .doc(userId)
-            .get();
-
-        print('Firestore data: ${userData.data()}');
-
-        if (userData.exists && userData.data()?['name'] != null) {
-          setState(() {
-            _nameController.text = userData.data()!['name'];
-          });
-          print('Name loaded: ${_nameController.text}');
-        } else {
-          print('No user data found or name is null');
-        }
-      }
-    } catch (e) {
-      print('Error loading user name: $e');
-    }
-  }
-
-  Future<void> _updateUserName() async {
-    try {
-      final userId = _auth.currentUser?.uid;
-      if (userId != null) {
-        await FirebaseFirestore.instance
-            .collection('users')
-            .doc(userId)
-            .update({
-          'name': _nameController.text.trim(),
+      final userData = await _authService.getUserData();
+      if (userData != null) {
+        setState(() {
+          _userName = userData['name'] ?? '';
+          _userEmail = userData['email'] ?? '';
         });
       }
     } catch (e) {
+      print('Error loading user data: $e');
+    }
+  }
+
+  Future<void> _updateUserName(String newName) async {
+    try {
+      await _authService.updateUserData({'name': newName});
+      await _loadUserData();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Name updated successfully')),
+      );
+    } catch (e) {
       print('Error updating user name: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+            content: Text('Changes saved locally. Will sync when online.')),
+      );
     }
   }
 
@@ -154,47 +145,60 @@ class _SettingsPageState extends State<SettingsPage> {
                 ),
               ),
               SizedBox(height: 8),
-              StreamBuilder<DocumentSnapshot>(
-                stream: FirebaseFirestore.instance
-                    .collection('users')
-                    .doc(_auth.currentUser?.uid)
-                    .snapshots(),
-                builder: (context, snapshot) {
-                  if (snapshot.hasError) {
-                    print('Error: ${snapshot.error}');
-                    return Text('Error loading name');
-                  }
-
-                  if (snapshot.hasData && snapshot.data != null) {
-                    final userData =
-                        snapshot.data!.data() as Map<String, dynamic>?;
-                    final name = userData?['name'] as String? ?? '';
-                    _nameController.text = name;
-
-                    print('Loaded name from stream: $name'); // Debug print
-
-                    return TextField(
-                      controller: _nameController,
-                      decoration: InputDecoration(
-                        hintText: 'Your name',
-                        hintStyle: TextStyle(
-                          color: Colors.grey[400],
-                          fontSize: 14,
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.grey.withOpacity(0.1),
+                      spreadRadius: 1,
+                      blurRadius: 4,
+                    ),
+                  ],
+                ),
+                child: Column(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: TextField(
+                        controller: _nameController..text = _userName,
+                        decoration: InputDecoration(
+                          hintText: 'Your name',
+                          hintStyle: TextStyle(
+                            color: Colors.grey[400],
+                            fontSize: 14,
+                          ),
+                          border: InputBorder.none,
                         ),
-                        border: InputBorder.none,
-                        contentPadding: EdgeInsets.all(16),
+                        onSubmitted: (value) => _updateUserName(value),
                       ),
-                      onChanged: (value) {
-                        setState(() {});
-                      },
-                      onSubmitted: (_) => _updateUserName(),
-                    );
-                  }
-
-                  return Center(
-                    child: CircularProgressIndicator(),
-                  );
-                },
+                    ),
+                    if (_userEmail.isNotEmpty) ...[
+                      Divider(height: 1, color: Colors.grey[200]),
+                      Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Row(
+                          children: [
+                            Text(
+                              'Email: ',
+                              style: TextStyle(
+                                color: Colors.grey[600],
+                                fontSize: 14,
+                              ),
+                            ),
+                            Text(
+                              _userEmail,
+                              style: TextStyle(
+                                fontSize: 14,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
               ),
 
               SizedBox(height: 24),
