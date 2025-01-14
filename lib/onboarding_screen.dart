@@ -66,13 +66,16 @@ class OnboardingScreenState extends State<OnBoardingScreen> {
       }
     } catch (e) {
       print('Error signing in anonymously: $e');
-      // Even if Firebase auth fails, save user data locally
+      // Create offline user with temporary ID
       if (_nameController.text.isNotEmpty) {
+        final offlineId = 'offline_${DateTime.now().millisecondsSinceEpoch}';
         await _authService.createUserInFirestore(
-          'offline_${DateTime.now().millisecondsSinceEpoch}',
+          offlineId,
           _nameController.text.trim(),
           '', // No email for anonymous users
         );
+        // Mark as created offline so it will be synced when online
+        await _authService.markOfflineCreated(true);
         print('Saved user data locally due to offline/error state');
       }
     }

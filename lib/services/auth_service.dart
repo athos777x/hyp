@@ -21,7 +21,7 @@ class AuthService {
   }
 
   // Mark user as created offline
-  Future<void> _markOfflineCreated(bool created) async {
+  Future<void> markOfflineCreated(bool created) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_offlineCreatedKey, created);
   }
@@ -51,8 +51,15 @@ class AuthService {
               .doc(userCredential.user!.uid)
               .set(userData);
 
+          // Update local storage with the new Firebase UID
+          final updatedData = {
+            ...userData,
+            'uid': userCredential.user!.uid,
+          };
+          await _saveUserDataLocally(updatedData);
+
           // Clear the offline created flag
-          await _markOfflineCreated(false);
+          await markOfflineCreated(false);
 
           print('Successfully synced offline user data to Firebase');
         }
@@ -137,14 +144,14 @@ class AuthService {
     if (connectivityResult != ConnectivityResult.none) {
       try {
         await _firestore.collection('users').doc(uid).set(userData);
-        await _markOfflineCreated(false);
+        await markOfflineCreated(false);
       } catch (e) {
         print('Error saving user to Firestore: $e');
-        await _markOfflineCreated(true);
+        await markOfflineCreated(true);
       }
     } else {
       // Mark as created offline
-      await _markOfflineCreated(true);
+      await markOfflineCreated(true);
     }
   }
 
@@ -202,18 +209,24 @@ class AuthService {
 
   // Update user data with offline support
   Future<void> updateUserData(Map<String, dynamic> data) async {
-    if (currentUser == null) return;
-
     // Update local data first
     final existingData = await _getLocalUserData() ?? {};
     final updatedData = {...existingData, ...data};
     await _saveUserDataLocally(updatedData);
 
-    // Try to update Firestore if online
+    // Try to update Firestore if online and user exists
     final connectivityResult = await Connectivity().checkConnectivity();
     if (connectivityResult != ConnectivityResult.none) {
       try {
-        await _firestore.collection('users').doc(currentUser!.uid).update(data);
+        if (_auth.currentUser != null) {
+          await _firestore
+              .collection('users')
+              .doc(_auth.currentUser!.uid)
+              .update(data);
+        } else {
+          // If we're online but no auth user exists, try to sync
+          await syncOfflineData();
+        }
       } catch (e) {
         print('Error updating user data: $e');
       }
