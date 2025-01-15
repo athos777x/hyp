@@ -16,7 +16,7 @@ class _DailyPageState extends State<DailyPage> {
   final double itemHeight = 360.0;
   late ScrollController _scrollController;
 
-  double _containerHeight = 708.0; // Set a default height for the container
+  late double _containerHeight;
 
   final double weekHeight = 52.0; // Height of a single week row
   final double headerHeight = 70.0; // Height of the weekday header
@@ -34,6 +34,7 @@ class _DailyPageState extends State<DailyPage> {
     super.initState();
     _selectedDay = DateTime.now();
     _scrollController = ScrollController();
+    _containerHeight = 65.0;
 
     // Initialize the year range
     _startYear = 2024;
@@ -69,6 +70,12 @@ class _DailyPageState extends State<DailyPage> {
 
   @override
   Widget build(BuildContext context) {
+    // Calculate dynamic container heights based on screen size
+    final screenHeight = MediaQuery.of(context).size.height;
+    final maxExpandedHeight = screenHeight * 0.7; // 70% of screen height
+    final minExpandedHeight = screenHeight * 0.4; // 40% of screen height
+    final expandedHeight = maxExpandedHeight.clamp(minExpandedHeight, 708.0);
+
     return Scaffold(
       backgroundColor: Color(0xFFF5F5F5),
       body: SafeArea(
@@ -251,7 +258,8 @@ class _DailyPageState extends State<DailyPage> {
                       AnimatedContainer(
                         duration: Duration(
                             milliseconds: 500), // Duration of the animation
-                        height: _containerHeight, // Use a variable for height
+                        height:
+                            _containerHeight == 65.0 ? 65.0 : expandedHeight,
                         color: Colors.white, // Set the color to white
                         curve: Curves.easeInOut, // Animation curve
                         child: Column(
@@ -929,12 +937,17 @@ class _DailyPageState extends State<DailyPage> {
   }
 
   void _handleContainerHeightChange(double newHeight) {
+    final screenHeight = MediaQuery.of(context).size.height;
+    final maxExpandedHeight = screenHeight * 0.7;
+    final minExpandedHeight = screenHeight * 0.4;
+    final expandedHeight = maxExpandedHeight.clamp(minExpandedHeight, 708.0);
+
     setState(() {
-      _containerHeight = newHeight;
+      _containerHeight = newHeight == 708.0 ? expandedHeight : newHeight;
     });
 
     // If expanding, wait for container animation to complete before showing remaining days
-    if (newHeight == 708.0) {
+    if (newHeight > 65.0) {
       Future.delayed(Duration(milliseconds: 600), () {
         if (mounted) {
           setState(() {
