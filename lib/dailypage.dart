@@ -256,46 +256,48 @@ class _DailyPageState extends State<DailyPage> {
                   Stack(
                     children: [
                       AnimatedContainer(
-                        duration: Duration(
-                            milliseconds: 500), // Duration of the animation
+                        duration: Duration(milliseconds: 500),
                         height:
                             _containerHeight == 65.0 ? 65.0 : expandedHeight,
-                        color: Colors.white, // Set the color to white
-                        curve: Curves.easeInOut, // Animation curve
+                        color: Colors.white,
+                        curve: Curves.easeInOut,
                         child: Column(
-                          // Use Column to position elements
                           children: [
-                            // Add padding for the swipe indicator
-                            Padding(
-                              padding: const EdgeInsets.only(
-                                  top: 8.0), // Adjust the top padding as needed
-                              child: GestureDetector(
-                                onVerticalDragUpdate: (details) {
-                                  if (details.delta.dy > 0) {
-                                    // Swipe down
-                                    _handleContainerHeightChange(65.0);
-                                  } else if (details.delta.dy < 0 &&
-                                      _containerHeight == 65.0) {
-                                    // Swipe up
-                                    _handleContainerHeightChange(708.0);
-                                    _scrollToSelectedWeek();
-                                  }
-                                },
-                                child: Container(
-                                  width: 28, // Width of the horizontal line
-                                  height: 6, // Height of the horizontal line
-                                  decoration: BoxDecoration(
-                                    color: const Color.fromARGB(255, 199, 199,
-                                        199), // Color of the line
-                                    borderRadius: BorderRadius.circular(
-                                        10), // Rounded edges
-                                  ),
+                            GestureDetector(
+                              onVerticalDragUpdate: (details) {
+                                if (details.delta.dy > 0) {
+                                  // Swipe down
+                                  _handleContainerHeightChange(65.0);
+                                } else if (details.delta.dy < 0 &&
+                                    _containerHeight == 65.0) {
+                                  // Swipe up
+                                  _handleContainerHeightChange(708.0);
+                                  _scrollToSelectedWeek();
+                                }
+                              },
+                              behavior: HitTestBehavior.opaque,
+                              child: Container(
+                                width: double.infinity,
+                                color: Colors.transparent,
+                                padding: const EdgeInsets.only(
+                                    top: 8.0, bottom: 8.0),
+                                child: Column(
+                                  children: [
+                                    Container(
+                                      width: 28,
+                                      height: 6,
+                                      decoration: BoxDecoration(
+                                        color: const Color.fromARGB(
+                                            255, 199, 199, 199),
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
                             ),
                             Row(
-                              mainAxisAlignment: MainAxisAlignment
-                                  .spaceBetween, // Distribute space between children
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -304,12 +306,11 @@ class _DailyPageState extends State<DailyPage> {
                                       padding: const EdgeInsets.only(
                                           left: 16.0, top: 0.0),
                                       child: Text(
-                                        _getDateStatus(), // Displays "Today"
+                                        _getDateStatus(),
                                         style: TextStyle(
                                           color: Colors.grey[600],
-                                          fontSize: 14, // Adjusted font size
-                                          fontWeight: FontWeight
-                                              .bold, // Adjusted font weight
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.bold,
                                         ),
                                       ),
                                     ),
@@ -317,12 +318,11 @@ class _DailyPageState extends State<DailyPage> {
                                       padding:
                                           const EdgeInsets.only(left: 16.0),
                                       child: Text(
-                                        '${_getDayName(_selectedDay)}, ${_getMonthName(_selectedDay)} ${_selectedDay.day}', // Displays "Friday, November 1"
+                                        '${_getDayName(_selectedDay)}, ${_getMonthName(_selectedDay)} ${_selectedDay.day}',
                                         style: TextStyle(
                                           color: Colors.black87,
-                                          fontSize: 16, // Adjusted font size
-                                          fontWeight: FontWeight
-                                              .w600, // Adjusted font weight
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w600,
                                         ),
                                       ),
                                     ),
