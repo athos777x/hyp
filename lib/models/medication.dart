@@ -46,31 +46,33 @@ class Medication {
   bool get taken {
     if (statusMap == null) return false;
     final dateKey = '${date.year}-${date.month}-${date.day}';
-    return statusMap![dateKey]?['taken'] ?? false;
+    final timeKey = '${time}';
+    return statusMap![dateKey]?['$timeKey-taken'] == true;
   }
 
   bool get skipped {
     if (statusMap == null) return false;
     final dateKey = '${date.year}-${date.month}-${date.day}';
-    return statusMap![dateKey]?['skipped'] ?? false;
+    final timeKey = '${time}';
+    return statusMap![dateKey]?['$timeKey-skipped'] == true;
   }
 
   set taken(bool value) {
     if (statusMap == null) statusMap = {};
     final dateKey = '${date.year}-${date.month}-${date.day}';
     if (!statusMap!.containsKey(dateKey)) {
-      statusMap![dateKey] = {'taken': false, 'skipped': false};
+      statusMap![dateKey] = {};
     }
-    statusMap![dateKey]!['taken'] = value;
+    statusMap![dateKey]!['$time-taken'] = value;
   }
 
   set skipped(bool value) {
     if (statusMap == null) statusMap = {};
     final dateKey = '${date.year}-${date.month}-${date.day}';
     if (!statusMap!.containsKey(dateKey)) {
-      statusMap![dateKey] = {'taken': false, 'skipped': false};
+      statusMap![dateKey] = {};
     }
-    statusMap![dateKey]!['skipped'] = value;
+    statusMap![dateKey]!['$time-skipped'] = value;
   }
 
   Map<String, dynamic> toJson() => {
@@ -188,8 +190,7 @@ class Medication {
       'endDate': endDate?.toIso8601String(),
       'time': time,
       'color': color.value,
-      'taken': taken,
-      'skipped': skipped,
+      'statusMap': statusMap,
       'selectedDays': selectedDays,
       'daysTaken': daysTaken,
       'selectedEndOption': selectedEndOption,

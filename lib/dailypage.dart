@@ -391,28 +391,41 @@ class _DailyPageState extends State<DailyPage> {
                                                   true);
 
                                       return isWithinDateRange && isCorrectDay;
-                                    }).map((med) {
-                                      // Create a new instance for this specific date
-                                      return Medication(
-                                        name: med.name,
-                                        date: selectedDate,
-                                        endDate: med.endDate,
-                                        time: med.time,
-                                        color: med.color,
-                                        statusMap: med.statusMap,
-                                        selectedDays: med.selectedDays,
-                                        daysTaken: med.daysTaken,
-                                        selectedEndOption:
-                                            med.selectedEndOption,
-                                        daysAmount: med.daysAmount,
-                                        supplyAmount: med.supplyAmount,
-                                        doseTimes: med.doseTimes,
-                                        type: med.type,
-                                        per: med.per,
-                                        every: med.every,
-                                        amount: med.amount,
-                                        finalDayDoses: med.finalDayDoses,
-                                      );
+                                    }).expand((med) {
+                                      // Create a medication instance for each dose time
+                                      // If doseTimes is available, use it; otherwise fall back to the single time
+                                      final doseTimes = med.doseTimes != null &&
+                                              med.doseTimes!.isNotEmpty
+                                          ? med.doseTimes!
+                                          : [
+                                              TimeOfDay(
+                                                  hour: int.parse(
+                                                      med.time.split(':')[0]),
+                                                  minute: int.parse(
+                                                      med.time.split(':')[1]))
+                                            ];
+                                      return doseTimes
+                                          .map((doseTime) => Medication(
+                                                name: med.name,
+                                                date: selectedDate,
+                                                endDate: med.endDate,
+                                                time: doseTime.format(context),
+                                                color: med.color,
+                                                statusMap: med.statusMap,
+                                                selectedDays: med.selectedDays,
+                                                daysTaken: med.daysTaken,
+                                                selectedEndOption:
+                                                    med.selectedEndOption,
+                                                daysAmount: med.daysAmount,
+                                                supplyAmount: med.supplyAmount,
+                                                doseTimes: med.doseTimes,
+                                                type: med.type,
+                                                per: med.per,
+                                                every: med.every,
+                                                amount: med.amount,
+                                                finalDayDoses:
+                                                    med.finalDayDoses,
+                                              ));
                                     }).toList();
 
                                     // Sort medications by time
@@ -1130,26 +1143,31 @@ class _DailyPageState extends State<DailyPage> {
   // Add this method to update the original medication's status for the specific date
   Future<void> _updateMedicationStatus(
       Medication displayMedication, bool taken, bool skipped) async {
-    // Find the original medication
-    final originalMedication = _medications.firstWhere((med) =>
-        med.name == displayMedication.name &&
-        med.time == displayMedication.time &&
-        med.type == displayMedication.type);
+    // Find the original medication in the list
+    final originalMedication = _medications.firstWhere(
+      (med) => med.name == displayMedication.name,
+      orElse: () => displayMedication,
+    );
 
-    // Create or update the status map in the original medication
     if (originalMedication.statusMap == null) {
       originalMedication.statusMap = {};
     }
 
-    // Store the status for this specific date
+    // Store the status for this specific date and time
     final dateKey =
         '${displayMedication.date.year}-${displayMedication.date.month}-${displayMedication.date.day}';
-    originalMedication.statusMap![dateKey] = {
-      'taken': taken,
-      'skipped': skipped
-    };
+
+    if (!originalMedication.statusMap!.containsKey(dateKey)) {
+      originalMedication.statusMap![dateKey] = {};
+    }
+
+    // Use the specific time for this dose
+    final timeKey = displayMedication.time;
+    originalMedication.statusMap![dateKey]!['$timeKey-taken'] = taken;
+    originalMedication.statusMap![dateKey]!['$timeKey-skipped'] = skipped;
 
     // Save to storage
     await _medicationService.saveMedications(_medications);
+    setState(() {});
   }
 }

@@ -891,37 +891,36 @@ class _AddMedicationScreenState extends State<AddMedicationScreen> {
           endDate = DateTime(_startDate.year + 10);
         }
 
-        // Create medications list with correct doses
-        final medications = _doseTimes.map((doseTime) {
-          return Medication(
-            name: _nameController.text,
-            originalName: widget.medicationToEdit?.name,
-            time: doseTime.format(context),
-            color: widget.medicationToEdit?.color ??
-                Colors.primaries[Random().nextInt(Colors.primaries.length)],
-            date: _startDate,
-            endDate: endDate,
-            finalDayDoses: finalDayDoses,
-            daysTaken: _selectedDaysTaken,
-            selectedDays: _selectedDaysTaken == 'selected days'
-                ? _selectedDays.toList()
-                : null,
-            doseTimes: _doseTimes,
-            selectedEndOption: _selectedEndOption,
-            daysAmount: _daysAmountController.text,
-            supplyAmount: _supplyAmountController.text,
-            type: _selectedType,
-            per: _selectedPer,
-            every: _selectedEvery,
-            amount:
-                _amountController.text.isEmpty ? null : _amountController.text,
-          );
-        }).toList();
+        // Create a single medication instance with all dose times
+        final medication = Medication(
+          name: _nameController.text,
+          originalName: widget.medicationToEdit?.name,
+          time: _doseTimes[0]
+              .format(context), // Use first dose time as primary time
+          color: widget.medicationToEdit?.color ??
+              Colors.primaries[Random().nextInt(Colors.primaries.length)],
+          date: _startDate,
+          endDate: endDate,
+          finalDayDoses: finalDayDoses,
+          daysTaken: _selectedDaysTaken,
+          selectedDays: _selectedDaysTaken == 'selected days'
+              ? _selectedDays.toList()
+              : null,
+          doseTimes: _doseTimes,
+          selectedEndOption: _selectedEndOption,
+          daysAmount: _daysAmountController.text,
+          supplyAmount: _supplyAmountController.text,
+          type: _selectedType,
+          per: _selectedPer,
+          every: _selectedEvery,
+          amount:
+              _amountController.text.isEmpty ? null : _amountController.text,
+        );
 
-        // Schedule notifications for the new medications
-        NotificationService().scheduleMedicationReminders(medications);
+        // Schedule notifications for the medication
+        NotificationService().scheduleMedicationReminders([medication]);
 
-        Navigator.pop(context, medications);
+        Navigator.pop(context, [medication]);
       }
     }
   }
@@ -1010,28 +1009,7 @@ class _AddMedicationScreenState extends State<AddMedicationScreen> {
     return (endDate, finalDayDoses);
   }
 
-  void _saveMedication() {
-    final medication = Medication(
-      name: _nameController.text.trim(),
-      originalName:
-          widget.medicationToEdit?.name, // Add original name if editing
-      date: _startDate,
-      endDate: _endDate,
-      time: _doseTimes[0].format(context),
-      color: Colors.primaries[Random().nextInt(Colors.primaries.length)],
-      selectedDays: _selectedDays.toList(),
-      daysTaken: _selectedDaysTaken,
-      selectedEndOption: _selectedEndOption,
-      daysAmount: _daysAmountController.text,
-      supplyAmount: _supplyAmountController.text,
-      doseTimes: _doseTimes,
-      type: _selectedType,
-      per: _selectedPer,
-      every: _selectedEvery,
-      amount: _amountController.text,
-    );
-
-    // Return a list containing the single medication
-    Navigator.pop(context, [medication]);
+  void _calculateEndDateAndDoses() {
+    // ... existing code ...
   }
 }
