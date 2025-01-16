@@ -82,10 +82,21 @@ class MedicationService {
 
           // Update or add medications
           for (var medication in medications) {
-            if (existingMedsMap.containsKey(medication.name)) {
+            if (medication.originalName != null &&
+                medication.originalName != medication.name) {
+              // Handle name change: delete old document and create new one
+              if (existingMedsMap.containsKey(medication.originalName)) {
+                batch.delete(
+                    existingMedsMap[medication.originalName]!.reference);
+              }
+              final docRef = userMedicationsRef.doc(medication.name);
+              batch.set(docRef, medication.toMap());
+            } else if (existingMedsMap.containsKey(medication.name)) {
+              // Update existing medication
               batch.update(existingMedsMap[medication.name]!.reference,
                   medication.toMap());
             } else {
+              // Create new medication
               final docRef = userMedicationsRef.doc(medication.name);
               batch.set(docRef, medication.toMap());
             }
@@ -274,11 +285,23 @@ class MedicationService {
 
         // Update or add medications
         for (var medication in medications) {
-          if (existingMedsMap.containsKey(medication.name)) {
+          if (medication.originalName != null &&
+              medication.originalName != medication.name) {
+            // Handle renamed medication
+            if (existingMedsMap.containsKey(medication.originalName)) {
+              // Delete the old document
+              batch.delete(existingMedsMap[medication.originalName]!.reference);
+            }
+            // Create new document with updated name
+            final docRef = userMedicationsRef.doc(medication.name);
+            batch.set(docRef, medication.toMap());
+          } else if (existingMedsMap.containsKey(medication.name)) {
+            // Update existing medication
             batch.update(existingMedsMap[medication.name]!.reference,
                 medication.toMap());
             existingMedsMap.remove(medication.name);
           } else {
+            // Create new medication
             final docRef = userMedicationsRef.doc(medication.name);
             batch.set(docRef, medication.toMap());
           }

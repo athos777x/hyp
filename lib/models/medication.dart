@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 class Medication {
   final String name;
+  final String? originalName;
   final DateTime date;
   DateTime? endDate;
   final String time;
@@ -21,6 +22,7 @@ class Medication {
 
   Medication({
     required this.name,
+    this.originalName,
     required this.date,
     this.endDate,
     required this.time,
@@ -73,6 +75,7 @@ class Medication {
 
   Map<String, dynamic> toJson() => {
         'name': name,
+        'originalName': originalName,
         'date': date.toIso8601String(),
         'endDate': endDate?.toIso8601String(),
         'time': time,
@@ -97,6 +100,7 @@ class Medication {
 
   factory Medication.fromJson(Map<String, dynamic> json) => Medication(
         name: json['name'],
+        originalName: json['originalName'],
         date: DateTime.parse(json['date']),
         endDate:
             json['endDate'] != null ? DateTime.parse(json['endDate']) : null,
