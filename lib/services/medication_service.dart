@@ -9,6 +9,49 @@ class MedicationService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final AuthService _authService = AuthService();
   static const String _key = 'medications';
+  static const String _deletedKey = 'deleted_medications';
+  static const String _offlineCreatedKey = 'offline_medications_created';
+
+  MedicationService() {
+    // Listen for connectivity changes
+    Connectivity()
+        .onConnectivityChanged
+        .listen((ConnectivityResult result) async {
+      if (result != ConnectivityResult.none) {
+        // When connection is restored, wait for auth sync first
+        final prefs = await SharedPreferences.getInstance();
+        final authOffline = prefs.getBool('offline_created') ?? false;
+
+        if (authOffline) {
+          // Wait for auth to sync first
+          await Future.delayed(Duration(seconds: 2));
+        }
+
+        // Then try to sync medication data
+        syncWithFirebase();
+      }
+    });
+
+    // Also listen for auth state changes
+    _authService.authStateChanges.listen((user) {
+      if (user != null) {
+        // When user becomes available (after offline auth sync), try to sync data
+        syncWithFirebase();
+      }
+    });
+  }
+
+  // Mark medications as created offline
+  Future<void> markOfflineCreated(bool created) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_offlineCreatedKey, created);
+  }
+
+  // Check if medications were created offline
+  Future<bool> _wasCreatedOffline() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_offlineCreatedKey) ?? false;
+  }
 
   // Save medications to SharedPreferences and Firebase if online
   Future<void> saveMedications(List<Medication> medications) async {
@@ -23,17 +66,14 @@ class MedicationService {
       if (connectivityResult != ConnectivityResult.none &&
           _authService.currentUser != null) {
         try {
-          // Save to Firebase
           final batch = _firestore.batch();
           final userMedicationsRef = _firestore
               .collection('users')
               .doc(_authService.currentUser!.uid)
               .collection('medications');
 
-          // Get existing medications from Firebase
+          // Get existing medications
           final existingMeds = await userMedicationsRef.get();
-
-          // Create a map of existing medications by name
           Map<String, DocumentSnapshot> existingMedsMap = {};
           for (var doc in existingMeds.docs) {
             final data = doc.data();
@@ -43,27 +83,23 @@ class MedicationService {
           // Update or add medications
           for (var medication in medications) {
             if (existingMedsMap.containsKey(medication.name)) {
-              // Update existing medication
               batch.update(existingMedsMap[medication.name]!.reference,
                   medication.toMap());
-              existingMedsMap.remove(medication.name);
             } else {
-              // Add new medication
-              final docRef = userMedicationsRef.doc();
+              final docRef = userMedicationsRef.doc(medication.name);
               batch.set(docRef, medication.toMap());
             }
           }
 
-          // Delete medications that no longer exist locally
-          for (var doc in existingMedsMap.values) {
-            batch.delete(doc.reference);
-          }
-
           await batch.commit();
+          await markOfflineCreated(false);
         } catch (e) {
           print('Error saving to Firebase: $e');
-          // Continue even if Firebase save fails
+          await markOfflineCreated(true);
         }
+      } else {
+        // Mark as created offline
+        await markOfflineCreated(true);
       }
     } catch (e) {
       print('Error in saveMedications: $e');
@@ -78,7 +114,7 @@ class MedicationService {
       List<Medication> localMedications = [];
       Map<String, Medication> medicationsMap = {};
       Set<String> deletedMedications =
-          Set<String>.from(prefs.getStringList('deleted_medications') ?? []);
+          Set<String>.from(prefs.getStringList(_deletedKey) ?? []);
 
       // Load local data
       final medicationJson = prefs.getString(_key);
@@ -97,6 +133,24 @@ class MedicationService {
       if (connectivityResult != ConnectivityResult.none &&
           _authService.currentUser != null) {
         try {
+          // First, process any pending deletions
+          if (deletedMedications.isNotEmpty) {
+            final batch = _firestore.batch();
+            for (var name in deletedMedications) {
+              final docRef = _firestore
+                  .collection('users')
+                  .doc(_authService.currentUser!.uid)
+                  .collection('medications')
+                  .doc(name);
+              batch.delete(docRef);
+            }
+            await batch.commit();
+            // Clear deleted medications list after successful deletion
+            await prefs.setStringList(_deletedKey, []);
+            deletedMedications.clear();
+          }
+
+          // Then fetch current Firebase data
           final snapshot = await _firestore
               .collection('users')
               .doc(_authService.currentUser!.uid)
@@ -111,10 +165,8 @@ class MedicationService {
               if (deletedMedications.contains(medication.name)) {
                 continue;
               }
-              // Only update if medication doesn't exist locally
-              if (!medicationsMap.containsKey(medication.name)) {
-                medicationsMap[medication.name] = medication;
-              }
+              // Update medication if it exists locally or add if it doesn't
+              medicationsMap[medication.name] = medication;
             }
 
             // Convert map back to list
@@ -122,11 +174,6 @@ class MedicationService {
 
             // Save merged data back to local storage
             await saveMedications(mergedMedications);
-
-            // Clear deleted medications list if sync successful
-            if (deletedMedications.isNotEmpty) {
-              await prefs.setStringList('deleted_medications', []);
-            }
 
             return mergedMedications;
           }
@@ -175,44 +222,124 @@ class MedicationService {
   Future<void> syncWithFirebase() async {
     if (_authService.currentUser == null) return;
 
-    final prefs = await SharedPreferences.getInstance();
-    final medicationJson = prefs.getString(_key);
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final wasOffline = await _wasCreatedOffline();
+      final deletedMedications =
+          Set<String>.from(prefs.getStringList(_deletedKey) ?? []);
 
-    if (medicationJson != null) {
-      final medicationList = jsonDecode(medicationJson) as List;
-      final medications =
-          medicationList.map((med) => Medication.fromJson(med)).toList();
+      // Only proceed if we have offline changes or pending deletions
+      if (!wasOffline && deletedMedications.isEmpty) return;
 
-      final batch = _firestore.batch();
-      final userMedicationsRef = _firestore
-          .collection('users')
-          .doc(_authService.currentUser!.uid)
-          .collection('medications');
-
-      // Delete existing medications
-      final existingMeds = await userMedicationsRef.get();
-      for (var doc in existingMeds.docs) {
-        batch.delete(doc.reference);
+      // First handle any pending deletions
+      if (deletedMedications.isNotEmpty) {
+        final batch = _firestore.batch();
+        for (var name in deletedMedications) {
+          final docRef = _firestore
+              .collection('users')
+              .doc(_authService.currentUser!.uid)
+              .collection('medications')
+              .doc(name);
+          batch.delete(docRef);
+        }
+        await batch.commit();
+        // Clear deleted medications list after successful deletion
+        await prefs.setStringList(_deletedKey, []);
       }
 
-      // Add new medications
-      for (var medication in medications) {
-        final docRef = userMedicationsRef.doc();
-        batch.set(docRef, medication.toMap());
+      // Then handle any offline created/modified data
+      final medicationJson = prefs.getString(_key);
+      if (medicationJson != null) {
+        final medicationList = jsonDecode(medicationJson) as List;
+        final medications =
+            medicationList.map((med) => Medication.fromJson(med)).toList();
+
+        final batch = _firestore.batch();
+        final userMedicationsRef = _firestore
+            .collection('users')
+            .doc(_authService.currentUser!.uid)
+            .collection('medications');
+
+        // Get existing medications
+        final existingMeds = await userMedicationsRef.get();
+
+        // Create a map of existing medications by name
+        Map<String, DocumentSnapshot> existingMedsMap = {};
+        for (var doc in existingMeds.docs) {
+          final data = doc.data();
+          if (!deletedMedications.contains(data['name'])) {
+            existingMedsMap[data['name']] = doc;
+          }
+        }
+
+        // Update or add medications
+        for (var medication in medications) {
+          if (existingMedsMap.containsKey(medication.name)) {
+            batch.update(existingMedsMap[medication.name]!.reference,
+                medication.toMap());
+            existingMedsMap.remove(medication.name);
+          } else {
+            final docRef = userMedicationsRef.doc(medication.name);
+            batch.set(docRef, medication.toMap());
+          }
+        }
+
+        await batch.commit();
       }
 
-      await batch.commit();
+      // Clear offline flags
+      await markOfflineCreated(false);
+    } catch (e) {
+      print('Error syncing with Firebase: $e');
+      rethrow;
     }
   }
 
-  // Update the delete functionality to track deleted medications
+  // Delete medication and handle online/offline state
   Future<void> deleteMedication(String medicationName) async {
-    final prefs = await SharedPreferences.getInstance();
-    final deletedMedications =
-        Set<String>.from(prefs.getStringList('deleted_medications') ?? []);
+    try {
+      // Add to deleted list
+      final prefs = await SharedPreferences.getInstance();
+      final deletedMedications =
+          Set<String>.from(prefs.getStringList(_deletedKey) ?? []);
+      deletedMedications.add(medicationName);
+      await prefs.setStringList(_deletedKey, deletedMedications.toList());
 
-    deletedMedications.add(medicationName);
-    await prefs.setStringList(
-        'deleted_medications', deletedMedications.toList());
+      // Remove from local storage
+      final medicationJson = prefs.getString(_key);
+      if (medicationJson != null) {
+        final medicationList = jsonDecode(medicationJson) as List;
+        final medications = medicationList
+            .map((med) => Medication.fromJson(med))
+            .where((med) => med.name != medicationName)
+            .toList();
+        await prefs.setString(
+            _key, jsonEncode(medications.map((med) => med.toJson()).toList()));
+      }
+
+      // Try to delete from Firebase if online
+      final connectivityResult = await Connectivity().checkConnectivity();
+      if (connectivityResult != ConnectivityResult.none &&
+          _authService.currentUser != null) {
+        try {
+          await _firestore
+              .collection('users')
+              .doc(_authService.currentUser!.uid)
+              .collection('medications')
+              .doc(medicationName)
+              .delete();
+
+          // Clear from deleted list since we successfully deleted from Firebase
+          deletedMedications.remove(medicationName);
+          await prefs.setStringList(_deletedKey, deletedMedications.toList());
+        } catch (e) {
+          print('Error deleting from Firebase: $e');
+          // Keep in deleted list for future sync
+        }
+      }
+    } catch (e) {
+      print('Error in deleteMedication: $e');
+      rethrow;
+    }
   }
 }

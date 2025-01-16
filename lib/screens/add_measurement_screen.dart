@@ -519,6 +519,7 @@ class _AddMeasurementScreenState extends State<AddMeasurementScreen> {
           try {
             // Create the measurement
             final measurement = BloodPressure(
+              id: widget.measurement?.id, // Preserve ID if editing
               systolic: sys,
               diastolic: dia,
               timestamp: DateTime(
