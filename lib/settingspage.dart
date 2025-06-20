@@ -3,6 +3,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:math' as math;
 import 'onboarding_screen.dart';
 import 'services/medication_service.dart';
 import '../healthpage.dart';
@@ -24,11 +25,14 @@ class _SettingsPageState extends State<SettingsPage> {
   final AuthService _authService = AuthService();
   String _userName = '';
   String _userEmail = '';
+  bool _isGoogleLinked = false;
+  bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
     _loadUserData();
+    _checkGoogleProvider();
   }
 
   Future<void> _loadUserData() async {
@@ -45,6 +49,16 @@ class _SettingsPageState extends State<SettingsPage> {
     }
   }
 
+  Future<void> _checkGoogleProvider() async {
+    final user = _auth.currentUser;
+    if (user != null) {
+      setState(() {
+        _isGoogleLinked = user.providerData
+            .any((provider) => provider.providerId == 'google.com');
+      });
+    }
+  }
+
   Future<void> _updateUserName(String newName) async {
     try {
       await _authService.updateUserData({'name': newName});
@@ -58,6 +72,83 @@ class _SettingsPageState extends State<SettingsPage> {
         SnackBar(
             content: Text('Changes saved locally. Will sync when online.')),
       );
+    }
+  }
+
+  Future<void> _linkWithGoogle() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      if (_auth.currentUser == null) {
+        // Sign in with Google if no user is signed in
+        await _authService.signInWithGoogle();
+      } else {
+        // Link existing account with Google
+        await _authService.linkAccountWithGoogle();
+      }
+
+      // Refresh user data
+      await _loadUserData();
+      await _checkGoogleProvider();
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Successfully linked with Google')),
+      );
+    } on FirebaseAuthException catch (e) {
+      String message = 'An error occurred';
+      print('Firebase Auth Error: ${e.code} - ${e.message}');
+
+      if (e.code == 'credential-already-in-use') {
+        message = 'This Google account is already linked to another account';
+      } else if (e.code == 'email-already-in-use') {
+        message = 'This email is already in use by another account';
+      } else if (e.code == 'provider-already-linked') {
+        message = 'This account is already linked with Google';
+      } else {
+        message = 'Error: ${e.message ?? e.code}';
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message)),
+      );
+    } catch (e) {
+      print('Error linking with Google: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to link with Google: ${e.toString()}')),
+      );
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _signInWithGoogle() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final userCredential = await _authService.signInWithGoogle();
+      if (userCredential != null) {
+        await _loadUserData();
+        await _checkGoogleProvider();
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Successfully signed in with Google')),
+        );
+      }
+    } catch (e) {
+      print('Error signing in with Google: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to sign in with Google')),
+      );
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
     }
   }
 
@@ -197,6 +288,18 @@ class _SettingsPageState extends State<SettingsPage> {
                         ),
                       ),
                     ],
+                    Divider(height: 1, color: Colors.grey[200]),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16.0, vertical: 12.0),
+                      child: _isLoading
+                          ? Center(child: CircularProgressIndicator())
+                          : Column(
+                              children: [
+                                _buildGoogleSignInButton(),
+                              ],
+                            ),
+                    ),
                   ],
                 ),
               ),
@@ -305,6 +408,86 @@ class _SettingsPageState extends State<SettingsPage> {
                 ),
               ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGoogleSignInButton() {
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        color: _isGoogleLinked ? Colors.grey.shade100 : Colors.white,
+        boxShadow: _isGoogleLinked
+            ? []
+            : [
+                BoxShadow(
+                  color: Colors.grey.withOpacity(0.1),
+                  spreadRadius: 1,
+                  blurRadius: 2,
+                  offset: Offset(0, 1),
+                ),
+              ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(12),
+          onTap: _isGoogleLinked ? null : _linkWithGoogle,
+          child: Padding(
+            padding:
+                const EdgeInsets.symmetric(vertical: 16.0, horizontal: 20.0),
+            child: Row(
+              children: [
+                Container(
+                  height: 24,
+                  width: 24,
+                  child: Icon(
+                    Icons.g_mobiledata,
+                    size: 24,
+                    color: Colors.blue,
+                  ),
+                ),
+                SizedBox(width: 16),
+                Expanded(
+                  child: Text(
+                    _isGoogleLinked
+                        ? 'Connected with Google'
+                        : 'Connect with Google',
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w500,
+                      color: _isGoogleLinked
+                          ? Colors.grey.shade600
+                          : Colors.black87,
+                    ),
+                  ),
+                ),
+                if (_isGoogleLinked)
+                  Container(
+                    height: 20,
+                    width: 20,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.green.shade100,
+                    ),
+                    child: Center(
+                      child: Icon(
+                        Icons.check,
+                        size: 14,
+                        color: Colors.green.shade700,
+                      ),
+                    ),
+                  )
+                else
+                  Icon(
+                    Icons.arrow_forward_ios,
+                    size: 14,
+                    color: Colors.grey.shade400,
+                  ),
+              ],
+            ),
           ),
         ),
       ),

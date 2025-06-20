@@ -21,8 +21,16 @@ class OnboardingScreenState extends State<OnBoardingScreen> {
   final TextEditingController _nameController = TextEditingController();
   final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
       FlutterLocalNotificationsPlugin();
+  bool _isLoading = false;
+  bool _isGoogleSignedIn = false;
 
   final List<OnboardingPage> _pages = [
+    OnboardingPage(
+      title: 'Welcome to HYP',
+      description: 'Choose how you want to continue',
+      showAuthOptions: true,
+      buttonText: 'Continue as Guest',
+    ),
     OnboardingPage(
       title: 'Welcome! May I know your name?',
       hasTextField: true,
@@ -48,6 +56,47 @@ class OnboardingScreenState extends State<OnBoardingScreen> {
       buttonText: 'Start',
     ),
   ];
+
+  Future<void> _signInWithGoogle() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final UserCredential? userCredential =
+          await _authService.signInWithGoogle();
+
+      if (userCredential != null) {
+        setState(() {
+          _isGoogleSignedIn = true;
+          _nameController.text = userCredential.user?.displayName ?? '';
+        });
+
+        // Skip to the next page after name
+        _pageController.animateToPage(
+          2, // Skip the name input page
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+        );
+      }
+    } catch (e) {
+      print('Error signing in with Google: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+            content:
+                Text('Failed to sign in with Google. Continuing as guest.')),
+      );
+      // Continue as guest if Google sign-in fails
+      _pageController.nextPage(
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
 
   Future<void> _signInAnonymously() async {
     try {
@@ -216,6 +265,7 @@ class OnboardingScreenState extends State<OnBoardingScreen> {
             Expanded(
               child: PageView.builder(
                 controller: _pageController,
+                physics: _isLoading ? NeverScrollableScrollPhysics() : null,
                 onPageChanged: (int page) {
                   setState(() {
                     _currentPage = page;
@@ -244,6 +294,16 @@ class OnboardingScreenState extends State<OnBoardingScreen> {
                             fontWeight: FontWeight.w500,
                           ),
                         ),
+                        const SizedBox(height: 10),
+                        if (_pages[index].description != null)
+                          Text(
+                            _pages[index].description!,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey[600],
+                            ),
+                          ),
                         const SizedBox(height: 20),
                         if (_pages[index].hasTextField)
                           TextField(
@@ -255,6 +315,18 @@ class OnboardingScreenState extends State<OnBoardingScreen> {
                               ),
                             ),
                           ),
+                        if (_pages[index].showAuthOptions) ...[
+                          const SizedBox(height: 30),
+                          _buildGoogleSignInButton(),
+                          const SizedBox(height: 20),
+                          const Text(
+                            'or',
+                            style: TextStyle(
+                              color: Colors.grey,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ],
                         const Spacer(),
                         if (_pages[index].showNotificationRequest)
                           const Text(
@@ -270,52 +342,93 @@ class OnboardingScreenState extends State<OnBoardingScreen> {
                         SizedBox(
                           width: double.infinity,
                           child: ElevatedButton(
-                            onPressed: () {
-                              if (_currentPage < _pages.length - 1) {
-                                if (_currentPage == 0) {
-                                  if (_nameController.text.trim().isEmpty) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                          content:
-                                              Text('Please enter your name')),
-                                    );
-                                    return;
-                                  }
-                                  FocusScope.of(context).unfocus();
-                                  _signInAnonymously();
-                                } else if (_pages[_currentPage]
-                                    .showNotificationRequest) {
-                                  _requestNotificationPermissions();
-                                } else if (_pages[_currentPage]
-                                    .showLocationRequest) {
-                                  _requestLocationPermission();
-                                }
-                                _pageController.nextPage(
-                                  duration: const Duration(milliseconds: 300),
-                                  curve: Curves.easeInOut,
-                                );
-                              } else {
-                                _completeOnboarding();
-                                if (mounted) {
-                                  Navigator.of(context).pushReplacement(
-                                    MaterialPageRoute(
-                                      builder: (context) => const HomePage(),
-                                    ),
-                                  );
-                                }
-                              }
-                            },
+                            onPressed: _isLoading
+                                ? null
+                                : () {
+                                    if (_currentPage < _pages.length - 1) {
+                                      if (_currentPage == 0) {
+                                        // First page - continue as guest
+                                        _pageController.nextPage(
+                                          duration:
+                                              const Duration(milliseconds: 300),
+                                          curve: Curves.easeInOut,
+                                        );
+                                      } else if (_currentPage == 1) {
+                                        // Name page
+                                        if (_nameController.text
+                                            .trim()
+                                            .isEmpty) {
+                                          ScaffoldMessenger.of(context)
+                                              .showSnackBar(
+                                            const SnackBar(
+                                                content: Text(
+                                                    'Please enter your name')),
+                                          );
+                                          return;
+                                        }
+                                        FocusScope.of(context).unfocus();
+                                        _signInAnonymously();
+                                        _pageController.nextPage(
+                                          duration:
+                                              const Duration(milliseconds: 300),
+                                          curve: Curves.easeInOut,
+                                        );
+                                      } else if (_pages[_currentPage]
+                                          .showNotificationRequest) {
+                                        _requestNotificationPermissions();
+                                        _pageController.nextPage(
+                                          duration:
+                                              const Duration(milliseconds: 300),
+                                          curve: Curves.easeInOut,
+                                        );
+                                      } else if (_pages[_currentPage]
+                                          .showLocationRequest) {
+                                        _requestLocationPermission();
+                                        _pageController.nextPage(
+                                          duration:
+                                              const Duration(milliseconds: 300),
+                                          curve: Curves.easeInOut,
+                                        );
+                                      } else {
+                                        _pageController.nextPage(
+                                          duration:
+                                              const Duration(milliseconds: 300),
+                                          curve: Curves.easeInOut,
+                                        );
+                                      }
+                                    } else {
+                                      _completeOnboarding();
+                                      if (mounted) {
+                                        Navigator.of(context).pushReplacement(
+                                          MaterialPageRoute(
+                                            builder: (context) =>
+                                                const HomePage(),
+                                          ),
+                                        );
+                                      }
+                                    }
+                                  },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.green,
+                              disabledBackgroundColor: Colors.grey,
                               padding: const EdgeInsets.symmetric(vertical: 15),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(8),
                               ),
                             ),
-                            child: Text(
-                              _pages[index].buttonText,
-                              style: const TextStyle(color: Colors.white),
-                            ),
+                            child: _isLoading
+                                ? const SizedBox(
+                                    height: 20,
+                                    width: 20,
+                                    child: CircularProgressIndicator(
+                                      color: Colors.white,
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                : Text(
+                                    _pages[index].buttonText,
+                                    style: const TextStyle(color: Colors.white),
+                                  ),
                           ),
                         ),
                       ],
@@ -329,20 +442,75 @@ class OnboardingScreenState extends State<OnBoardingScreen> {
       ),
     );
   }
+
+  Widget _buildGoogleSignInButton() {
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(8),
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.2),
+            spreadRadius: 1,
+            blurRadius: 2,
+            offset: const Offset(0, 1),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(8),
+          onTap: _isLoading ? null : _signInWithGoogle,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 16),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  height: 24,
+                  width: 24,
+                  child: const Icon(
+                    Icons.g_mobiledata,
+                    size: 24,
+                    color: Colors.blue,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                const Text(
+                  'Sign in with Google',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.black87,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class OnboardingPage {
   final String title;
+  final String? description;
   final String buttonText;
   final bool hasTextField;
   final bool showNotificationRequest;
   final bool showLocationRequest;
+  final bool showAuthOptions;
 
   OnboardingPage({
     required this.title,
+    this.description,
     required this.buttonText,
     this.hasTextField = false,
     this.showNotificationRequest = false,
     this.showLocationRequest = false,
+    this.showAuthOptions = false,
   });
 }
