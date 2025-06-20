@@ -46,7 +46,7 @@
 		<key>UIApplicationSupportsIndirectInputEvents</key>
 		<true/>
 		<key>UIStatusBarHidden</key>
-		<false/>
+		<true/>
 		<key>NSCameraUsageDescription</key>
 		<string>This app requires camera access to scan QR codes</string>
 		<key>NSMicrophoneUsageDescription</key>
@@ -66,5 +66,7 @@
 		<array>
 			<string>https</string>
 		</array>
+		<key>UIViewControllerBasedStatusBarAppearance</key>
+		<false/>
 	</dict>
 </plist>
