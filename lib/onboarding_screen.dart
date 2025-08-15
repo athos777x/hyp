@@ -37,8 +37,9 @@ class OnboardingScreenState extends State<OnBoardingScreen> {
       buttonText: 'Next',
     ),
     OnboardingPage(
-      title:
-          'Facts: Lorem ipsum dolor sit amet. Est possimus natus ab consequatur iusto sed vitae animi ea quis facilis.',
+      title: 'Welcome to HYP App',
+      description:
+          'Your personal health companion for managing medications and finding nearby healthcare services.',
       buttonText: 'Next',
     ),
     OnboardingPage(
@@ -52,7 +53,9 @@ class OnboardingScreenState extends State<OnBoardingScreen> {
       showLocationRequest: true,
     ),
     OnboardingPage(
-      title: 'Great!',
+      title: 'Welcome to HYP App!',
+      description:
+          'You\'re all set! Start managing your health with confidence.',
       buttonText: 'Start',
     ),
   ];
