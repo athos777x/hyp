@@ -543,6 +543,61 @@ class _MedicationsPageState extends State<MedicationsPage> {
           ],
         ),
       ),
+      floatingActionButton: Column(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          // Test notification button
+          FloatingActionButton(
+            heroTag: "test_notification",
+            onPressed: _testMedicationNotification,
+            backgroundColor: Colors.orange,
+            child: Icon(Icons.notifications_active, color: Colors.white),
+            mini: true,
+          ),
+          SizedBox(height: 10),
+          // Add medication button
+          FloatingActionButton(
+            heroTag: "add_medication",
+            onPressed: _addNewMedication,
+            backgroundColor: Color(0xFF4CAF50),
+            child: Icon(Icons.add, color: Colors.white),
+          ),
+        ],
+      ),
     );
+  }
+
+  Future<void> _testMedicationNotification() async {
+    try {
+      // Show immediate test notification
+      await NotificationService().showTestMedicationNotification();
+
+      // Get pending notification count for debugging
+      final pendingCount =
+          await NotificationService().getPendingNotificationCount();
+
+      // Show success message
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+                'Test notification sent! Pending notifications: $pendingCount'),
+            backgroundColor: Color(0xFF4CAF50),
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
+    } catch (e) {
+      print('Error sending test notification: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to send test notification: $e'),
+            backgroundColor: Colors.red,
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
+    }
   }
 }

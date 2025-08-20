@@ -1,6 +1,6 @@
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
-import 'package:timezone/data/latest.dart' as tz;
+import 'package:timezone/data/latest.dart' as tz_data;
 import '../models/medication.dart';
 import 'package:shared_preferences/shared_preferences.dart' as prefs;
 
@@ -15,7 +15,7 @@ class NotificationService {
   static const String _lastRescheduleKey = 'last_notification_reschedule';
 
   Future<void> initialize() async {
-    tz.initializeTimeZones();
+    tz_data.initializeTimeZones();
 
     const androidSettings =
         AndroidInitializationSettings('@mipmap/ic_launcher');
@@ -37,6 +37,25 @@ class NotificationService {
         print('Notification tapped: ${details.payload}');
       },
     );
+
+    // Create notification channel for Android
+    await _createNotificationChannel();
+  }
+
+  Future<void> _createNotificationChannel() async {
+    const androidNotificationChannel = AndroidNotificationChannel(
+      'medication_reminders',
+      'Medication Reminders',
+      description: 'Reminders to take your medication',
+      importance: Importance.max,
+      playSound: true,
+      enableVibration: true,
+    );
+
+    await _notifications
+        .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>()
+        ?.createNotificationChannel(androidNotificationChannel);
   }
 
   Future<void> checkAndRescheduleNotifications(
@@ -168,6 +187,10 @@ class NotificationService {
       importance: Importance.max,
       priority: Priority.high,
       playSound: true,
+      enableVibration: true,
+      autoCancel: false,
+      ongoing: false,
+      styleInformation: const DefaultStyleInformation(true, true),
     );
 
     final iosDetails = DarwinNotificationDetails(
@@ -181,17 +204,26 @@ class NotificationService {
       iOS: iosDetails,
     );
 
-    await _notifications.zonedSchedule(
-      id,
-      title,
-      body,
-      tz.TZDateTime.from(scheduledTime, tz.local),
-      details,
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-      uiLocalNotificationDateInterpretation:
-          UILocalNotificationDateInterpretation.absoluteTime,
-      payload: payload,
-    );
+    try {
+      await _notifications.zonedSchedule(
+        id,
+        title,
+        body,
+        tz.TZDateTime.from(scheduledTime, tz.local),
+        details,
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        uiLocalNotificationDateInterpretation:
+            UILocalNotificationDateInterpretation.absoluteTime,
+        payload: payload,
+      );
+      print(
+          'Successfully scheduled notification for $scheduledTime with ID: $id');
+    } catch (e) {
+      print('Error scheduling notification: $e');
+      // For fallback, we could show immediate notification instead
+      // but for medication reminders, we want scheduled notifications to work
+      rethrow;
+    }
   }
 
   Future<void> cancelAllNotifications() async {
@@ -219,5 +251,42 @@ class NotificationService {
         await _notifications.cancel(notification.id);
       }
     }
+  }
+
+  /// Test method to show immediate medication notification
+  Future<void> showTestMedicationNotification() async {
+    await _notifications.show(
+      999998, // Special test ID
+      'Test Medication Reminder',
+      'This is a test notification to verify medication reminders are working',
+      NotificationDetails(
+        android: AndroidNotificationDetails(
+          'medication_reminders',
+          'Medication Reminders',
+          channelDescription: 'Reminders to take your medication',
+          importance: Importance.max,
+          priority: Priority.high,
+          playSound: true,
+          enableVibration: true,
+        ),
+        iOS: const DarwinNotificationDetails(
+          presentAlert: true,
+          presentBadge: true,
+          presentSound: true,
+        ),
+      ),
+      payload: 'test_medication',
+    );
+  }
+
+  /// Get pending notification count for debugging
+  Future<int> getPendingNotificationCount() async {
+    final notifications = await _notifications.pendingNotificationRequests();
+    return notifications.length;
+  }
+
+  /// Get all pending notifications for debugging
+  Future<List<PendingNotificationRequest>> getPendingNotifications() async {
+    return await _notifications.pendingNotificationRequests();
   }
 }

@@ -1,5 +1,6 @@
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
+import 'package:timezone/data/latest.dart' as tz_data;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/material.dart';
 
@@ -18,6 +19,14 @@ class BloodPressureNotificationService {
   static const String _highBPReminderKey = 'high_bp_reminder_active';
 
   Future<void> initialize() async {
+    // Initialize timezone data if not already done
+    try {
+      tz_data.initializeTimeZones();
+    } catch (e) {
+      // Already initialized, ignore error
+      print('Timezone already initialized: $e');
+    }
+
     const androidSettings =
         AndroidInitializationSettings('@mipmap/ic_launcher');
     const iosSettings = DarwinInitializationSettings(
@@ -38,6 +47,25 @@ class BloodPressureNotificationService {
         print('Blood pressure notification tapped: ${details.payload}');
       },
     );
+
+    // Create notification channel for Android
+    await _createNotificationChannel();
+  }
+
+  Future<void> _createNotificationChannel() async {
+    const androidNotificationChannel = AndroidNotificationChannel(
+      _notificationChannelId,
+      _notificationChannelName,
+      description: 'Reminders to measure blood pressure',
+      importance: Importance.max,
+      playSound: true,
+      enableVibration: true,
+    );
+
+    await _notifications
+        .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>()
+        ?.createNotificationChannel(androidNotificationChannel);
   }
 
   Future<void> scheduleReminders() async {

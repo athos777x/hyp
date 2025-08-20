@@ -6,6 +6,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:geolocator/geolocator.dart';
 import 'services/auth_service.dart';
+import 'services/notification_service.dart';
 
 class OnBoardingScreen extends StatefulWidget {
   const OnBoardingScreen({super.key});
@@ -282,11 +283,33 @@ class OnboardingScreenState extends State<OnBoardingScreen> {
                       children: [
                         const Spacer(),
                         // Placeholder for image
-                        Container(
-                          width: 100,
-                          height: 100,
-                          color: Colors.green.withOpacity(0.1),
-                          child: const Icon(Icons.image, color: Colors.green),
+                        GestureDetector(
+                          onLongPress: () async {
+                            // Hidden test notification feature - long press the image
+                            try {
+                              await NotificationService()
+                                  .showTestMedicationNotification();
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Test notification sent!'),
+                                  backgroundColor: Colors.green,
+                                ),
+                              );
+                            } catch (e) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Test failed: $e'),
+                                  backgroundColor: Colors.red,
+                                ),
+                              );
+                            }
+                          },
+                          child: Container(
+                            width: 100,
+                            height: 100,
+                            color: Colors.green.withOpacity(0.1),
+                            child: const Icon(Icons.image, color: Colors.green),
+                          ),
                         ),
                         const SizedBox(height: 40),
                         Text(
