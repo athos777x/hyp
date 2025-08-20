@@ -415,7 +415,20 @@ class _HospitalsPageState extends State<HospitalsPage> {
                       TileLayer(
                         urlTemplate:
                             'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                        userAgentPackageName: 'com.example.app',
+                        userAgentPackageName: 'com.example.hyp',
+                        maxZoom: 19,
+                        maxNativeZoom: 19,
+                        // Add additional headers to be respectful to OSM
+                        additionalOptions: {
+                          'attribution': '© OpenStreetMap contributors',
+                        },
+                        // Add error handling
+                        errorTileCallback: (tile, error, stackTrace) {
+                          print('Tile loading error: $error');
+                        },
+                        // Fallback tile for when tiles fail to load
+                        fallbackUrl:
+                            'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                       ),
                       MarkerLayer(
                         markers: _isLoadingHospitals
