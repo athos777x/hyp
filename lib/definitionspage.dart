@@ -428,17 +428,6 @@ class _DefinitionsPageState extends State<DefinitionsPage> {
               frequency: '3-7 days per week',
               intensity: 'Low to moderate',
             ),
-            _buildExerciseCard(
-              title: 'Tai Chi',
-              icon: Icons.accessibility_new,
-              color: Colors.teal[100]!,
-              iconColor: Colors.teal[700]!,
-              description:
-                  'This gentle Chinese martial art involves slow, flowing movements combined with deep breathing. Studies show it can lower blood pressure and reduce stress. It\'s particularly suitable for older adults or those with limited mobility.',
-              duration: '30-60 minutes',
-              frequency: '3-5 days per week',
-              intensity: 'Low',
-            ),
             SizedBox(height: 24),
             Container(
               padding: EdgeInsets.all(16),

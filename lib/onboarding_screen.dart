@@ -307,8 +307,19 @@ class OnboardingScreenState extends State<OnBoardingScreen> {
                           child: Container(
                             width: 100,
                             height: 100,
-                            color: Colors.green.withOpacity(0.1),
-                            child: const Icon(Icons.image, color: Colors.green),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(20),
+                              color: Colors.green.withOpacity(0.1),
+                            ),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(20),
+                              child: Image.asset(
+                                'assets/images/splash/logo.png',
+                                width: 100,
+                                height: 100,
+                                fit: BoxFit.contain,
+                              ),
+                            ),
                           ),
                         ),
                         const SizedBox(height: 40),
