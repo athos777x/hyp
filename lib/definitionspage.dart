@@ -228,6 +228,7 @@ class _DefinitionsPageState extends State<DefinitionsPage> {
                 isHealthy: true,
                 description:
                     'Rich in potassium, which helps your kidneys flush out sodium that raises blood pressure. Examples include spinach, kale, and collard greens.',
+                imagePath: 'assets/images/food/leafygreens.jpg',
               ),
               FoodItem(
                 name: 'Berries',
@@ -237,6 +238,7 @@ class _DefinitionsPageState extends State<DefinitionsPage> {
                 isHealthy: true,
                 description:
                     'High in antioxidants called flavonoids, which can help lower blood pressure and improve blood vessel function.',
+                imagePath: 'assets/images/food/berries.jpg',
               ),
               FoodItem(
                 name: 'Bananas',
@@ -246,6 +248,7 @@ class _DefinitionsPageState extends State<DefinitionsPage> {
                 isHealthy: true,
                 description:
                     'Excellent source of potassium, which helps counteract the effects of sodium and relaxes blood vessel walls.',
+                imagePath: 'assets/images/food/bananas.jpg',
               ),
               FoodItem(
                 name: 'Oatmeal',
@@ -255,6 +258,7 @@ class _DefinitionsPageState extends State<DefinitionsPage> {
                 isHealthy: true,
                 description:
                     'High in fiber and low in sodium. Regular consumption has been linked to reduced cholesterol levels and blood pressure.',
+                imagePath: 'assets/images/food/oatmeal.jpg',
               ),
               FoodItem(
                 name: 'Fatty Fish',
@@ -264,6 +268,7 @@ class _DefinitionsPageState extends State<DefinitionsPage> {
                 isHealthy: true,
                 description:
                     'Rich in omega-3 fatty acids which can reduce inflammation and lower blood pressure. Examples include salmon, mackerel, and sardines.',
+                imagePath: 'assets/images/food/fattyfish.jpg',
               ),
               FoodItem(
                 name: 'Garlic',
@@ -273,6 +278,7 @@ class _DefinitionsPageState extends State<DefinitionsPage> {
                 isHealthy: true,
                 description:
                     'Contains allicin, which may help reduce blood pressure by promoting the production of nitric oxide that helps relax blood vessels.',
+                imagePath: 'assets/images/food/garlic.jpg',
               ),
             ]),
 
@@ -297,6 +303,7 @@ class _DefinitionsPageState extends State<DefinitionsPage> {
                 isHealthy: false,
                 description:
                     'High sodium intake causes your body to retain fluid, increasing blood pressure. Limit salt to less than 1,500mg per day if you have hypertension.',
+                imagePath: 'assets/images/food/salt.jpg',
               ),
               FoodItem(
                 name: 'Processed Foods',
@@ -306,6 +313,7 @@ class _DefinitionsPageState extends State<DefinitionsPage> {
                 isHealthy: false,
                 description:
                     'Often high in salt, sugar, and unhealthy fats. These include frozen meals, canned soups, and packaged snacks.',
+                imagePath: 'assets/images/food/processedfoods.jpg',
               ),
               FoodItem(
                 name: 'Alcohol',
@@ -315,6 +323,7 @@ class _DefinitionsPageState extends State<DefinitionsPage> {
                 isHealthy: false,
                 description:
                     'Excessive drinking can raise blood pressure. Limit to one drink per day for women and two for men, if at all.',
+                imagePath: 'assets/images/food/alcohol.jpg',
               ),
               FoodItem(
                 name: 'Caffeine',
@@ -324,6 +333,7 @@ class _DefinitionsPageState extends State<DefinitionsPage> {
                 isHealthy: false,
                 description:
                     'Can cause a temporary spike in blood pressure. Moderate consumption is generally okay, but some people are more sensitive to its effects.',
+                imagePath: 'assets/images/food/caffeine.jpg',
               ),
               FoodItem(
                 name: 'Red Meat',
@@ -333,6 +343,7 @@ class _DefinitionsPageState extends State<DefinitionsPage> {
                 isHealthy: false,
                 description:
                     'High in saturated fat which can raise blood cholesterol levels and contribute to heart disease. Limit consumption and choose lean cuts.',
+                imagePath: 'assets/images/food/redmeat.jpg',
               ),
               FoodItem(
                 name: 'Pastry',
@@ -342,6 +353,7 @@ class _DefinitionsPageState extends State<DefinitionsPage> {
                 isHealthy: false,
                 description:
                     'Excessive sugar intake is linked to obesity and increased blood pressure. Avoid sugary drinks and desserts.',
+                imagePath: 'assets/images/food/pastry.jpg',
               ),
             ]),
           ],
@@ -497,7 +509,6 @@ class _DefinitionsPageState extends State<DefinitionsPage> {
       onTap: () => _showFoodDetails(food),
       child: Container(
         decoration: BoxDecoration(
-          color: food.color,
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
@@ -507,24 +518,69 @@ class _DefinitionsPageState extends State<DefinitionsPage> {
             ),
           ],
         ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              food.icon,
-              color: food.iconColor,
-              size: 32,
-            ),
-            SizedBox(height: 8),
-            Text(
-              food.name,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontWeight: FontWeight.w600,
-                fontSize: 16,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(12),
+          child: Stack(
+            children: [
+              // Background image or fallback color
+              if (food.imagePath != null)
+                Positioned.fill(
+                  child: Image.asset(
+                    food.imagePath!,
+                    fit: BoxFit.cover,
+                  ),
+                )
+              else
+                Positioned.fill(
+                  child: Container(
+                    color: food.color,
+                  ),
+                ),
+              // Dark overlay for better text readability
+              if (food.imagePath != null)
+                Positioned.fill(
+                  child: Container(
+                    color: Colors.black.withOpacity(0.3),
+                  ),
+                ),
+              // Content
+              Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      food.icon,
+                      color: food.imagePath != null
+                          ? Colors.white
+                          : food.iconColor,
+                      size: 32,
+                    ),
+                    SizedBox(height: 8),
+                    Text(
+                      food.name,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 16,
+                        color: food.imagePath != null
+                            ? Colors.white
+                            : Colors.black,
+                        shadows: food.imagePath != null
+                            ? [
+                                Shadow(
+                                  color: Colors.black.withOpacity(0.7),
+                                  offset: Offset(1, 1),
+                                  blurRadius: 2,
+                                ),
+                              ]
+                            : null,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -890,6 +946,7 @@ class FoodItem {
   final Color iconColor;
   final bool isHealthy;
   final String description;
+  final String? imagePath;
 
   FoodItem({
     required this.name,
@@ -898,5 +955,6 @@ class FoodItem {
     required this.iconColor,
     required this.isHealthy,
     required this.description,
+    this.imagePath,
   });
 }

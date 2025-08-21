@@ -40,6 +40,7 @@ flutter:
   - assets/images/icons/
   - assets/images/splash/
   - assets/images/definition/
+  - assets/images/food/
 
 flutter_native_splash:
   color: "#FFFFFF"
