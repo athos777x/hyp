@@ -72,18 +72,19 @@ class _DefinitionsPageState extends State<DefinitionsPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Placeholder Image
+            // Hypertension Image
             Container(
               height: 200,
               width: double.infinity,
               decoration: BoxDecoration(
-                color: Color(0xFF4CAF50).withOpacity(0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(
-                Icons.image,
-                color: Color(0xFF4CAF50),
-                size: 48,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: Image.asset(
+                  'assets/images/definition/hypertension.jpg',
+                  fit: BoxFit.cover,
+                ),
               ),
             ),
             SizedBox(height: 24),
@@ -334,7 +335,7 @@ class _DefinitionsPageState extends State<DefinitionsPage> {
                     'High in saturated fat which can raise blood cholesterol levels and contribute to heart disease. Limit consumption and choose lean cuts.',
               ),
               FoodItem(
-                name: 'Sugar',
+                name: 'Pastry',
                 icon: Icons.cake,
                 color: Colors.pink[100]!,
                 iconColor: Colors.pink,
