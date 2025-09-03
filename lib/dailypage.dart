@@ -4,6 +4,7 @@ import 'screens/add_medication_screen.dart';
 import 'services/medication_service.dart';
 import 'models/medication.dart';
 import 'services/event_bus_service.dart';
+import 'services/notification_service.dart';
 import 'dart:async';
 
 class DailyPage extends StatefulWidget {
@@ -25,6 +26,7 @@ class _DailyPageState extends State<DailyPage> {
   late int _endYear;
 
   final MedicationService _medicationService = MedicationService();
+  final NotificationService _notificationService = NotificationService();
   List<Medication> _medications = [];
 
   late StreamSubscription _medicationUpdateSubscription;
@@ -47,6 +49,9 @@ class _DailyPageState extends State<DailyPage> {
     });
 
     _loadMedications();
+
+    // Clean up expired reminders on app start
+    _notificationService.cleanupExpiredReminders();
 
     // Add subscription to medication updates
     _medicationUpdateSubscription = EventBusService()
@@ -1165,6 +1170,23 @@ class _DailyPageState extends State<DailyPage> {
     final timeKey = displayMedication.time;
     originalMedication.statusMap![dateKey]!['$timeKey-taken'] = taken;
     originalMedication.statusMap![dateKey]!['$timeKey-skipped'] = skipped;
+
+    // Cancel reminder notification ONLY when medication is actually taken
+    // If skipped, the user should still get the reminder since they haven't taken it
+    if (taken) {
+      final scheduledTime = DateTime(
+        displayMedication.date.year,
+        displayMedication.date.month,
+        displayMedication.date.day,
+        _timeStringToDateTime(displayMedication.time).hour,
+        _timeStringToDateTime(displayMedication.time).minute,
+      );
+
+      await _notificationService.cancelReminderNotification(
+        displayMedication.name,
+        scheduledTime,
+      );
+    }
 
     // Save to storage
     await _medicationService.saveMedications(_medications);
