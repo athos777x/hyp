@@ -1,10 +1,14 @@
+import 'dart:async';
+import 'dart:math';
+
 import 'package:flutter/material.dart';
-import 'screens/add_measurement_screen.dart';
-import 'models/blood_pressure.dart';
 import 'package:intl/intl.dart';
+
+import 'models/blood_pressure.dart';
+import 'screens/add_measurement_screen.dart';
+import 'screens/blood_pressure_histogram_screen.dart';
 import 'services/blood_pressure_service.dart';
 import 'services/event_bus_service.dart';
-import 'dart:async';
 
 class HealthPage extends StatefulWidget {
   static Future<void> clearMeasurements() async {
@@ -16,6 +20,8 @@ class HealthPage extends StatefulWidget {
 }
 
 class _HealthPageState extends State<HealthPage> {
+  static const bool _showTestingActions =
+      false; // TODO: Change to false before deploying
   List<BloodPressure> measurements = [];
   bool _isLoading = false;
   final BloodPressureService _bloodPressureService = BloodPressureService();
@@ -61,6 +67,187 @@ class _HealthPageState extends State<HealthPage> {
   Future<void> _saveMeasurements() async {
     await _bloodPressureService.saveMeasurements(measurements);
     EventBusService().notifyBloodPressureUpdate();
+  }
+
+  Future<void> _generateSampleData() async {
+    setState(() {
+      _isLoading = true;
+    });
+    try {
+      final random = Random();
+      final now = DateTime.now();
+      final earliestTargetMonth = DateTime(now.year, now.month - 11, 1);
+      final monthKeyFormatter = DateFormat('yyyy-MM');
+
+      String buildSampleId(DateTime timestamp, int entryIndex) {
+        final monthKey = monthKeyFormatter.format(timestamp);
+        final salt = random.nextInt(1 << 30);
+        return 'sample_${monthKey}_${timestamp.microsecondsSinceEpoch}_'
+            '${entryIndex}_$salt';
+      }
+
+      final preservedMeasurements = measurements
+          .where((bp) => bp.timestamp.isBefore(earliestTargetMonth))
+          .toList();
+      final generated = List<BloodPressure>.from(preservedMeasurements);
+
+      final monthsDescending = List<DateTime>.generate(
+        12,
+        (index) => DateTime(now.year, now.month - index, 1),
+      );
+
+      for (final monthDate in monthsDescending) {
+        final daysInMonth =
+            DateUtils.getDaysInMonth(monthDate.year, monthDate.month);
+        final entriesForMonth = 1 + random.nextInt(5); // 1-5 entries
+
+        for (int entry = 0; entry < entriesForMonth; entry++) {
+          final day = random.nextInt(daysInMonth) + 1;
+          final timestamp = DateTime(
+            monthDate.year,
+            monthDate.month,
+            day,
+            random.nextInt(24),
+            random.nextInt(60),
+          );
+          final systolic = 110 + random.nextInt(45); // 110-154
+          int diastolic = 65 + random.nextInt(25); // 65-89
+          if (diastolic >= systolic) {
+            diastolic = systolic - 5;
+          }
+
+          generated.add(
+            BloodPressure(
+              id: buildSampleId(timestamp, entry),
+              systolic: systolic,
+              diastolic: diastolic,
+              timestamp: timestamp,
+            ),
+          );
+        }
+      }
+
+      // Ensure every month is represented at least once with a deterministic entry.
+      final monthsAscending = monthsDescending.reversed.toList();
+      for (final monthDate in monthsAscending) {
+        final monthKey = monthKeyFormatter.format(monthDate);
+        final hasMeasurementsForMonth = generated.any(
+          (bp) => monthKeyFormatter.format(bp.timestamp) == monthKey,
+        );
+
+        if (!hasMeasurementsForMonth) {
+          final timestamp = DateTime(
+            monthDate.year,
+            monthDate.month,
+            15,
+            9 + random.nextInt(8),
+            random.nextInt(60),
+          );
+          generated.add(
+            BloodPressure(
+              id: buildSampleId(timestamp, 9999),
+              systolic: 120 + random.nextInt(20),
+              diastolic: 75 + random.nextInt(10),
+              timestamp: timestamp,
+            ),
+          );
+        }
+      }
+
+      generated.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+      await _bloodPressureService.saveMeasurements(generated);
+      if (!mounted) return;
+
+      setState(() {
+        measurements = generated;
+      });
+
+      EventBusService().notifyBloodPressureUpdate();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Replaced the last 12 months with generated sample measurements.',
+          ),
+          duration: Duration(seconds: 2),
+        ),
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to generate samples: $e'),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _confirmAndClearMeasurements() async {
+    final shouldClear = await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Reset measurements?'),
+            content: const Text(
+              'This will delete the last 12 months of data plus any unsynced readings. '
+              'Use only for local testing.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, true),
+                style: TextButton.styleFrom(foregroundColor: Colors.red),
+                child: const Text('Delete'),
+              ),
+            ],
+          ),
+        ) ??
+        false;
+
+    if (!shouldClear) return;
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      await _bloodPressureService.clearMeasurements();
+      EventBusService().notifyBloodPressureUpdate();
+      if (!mounted) return;
+      setState(() {
+        measurements = [];
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('All measurements deleted.'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to clear measurements: $e'),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
   }
 
   void _showMeasurementOptions(int index, BloodPressure measurement) {
@@ -152,6 +339,62 @@ class _HealthPageState extends State<HealthPage> {
         ),
         backgroundColor: Colors.transparent,
         elevation: 0,
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(top: 22.0, right: 8.0),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                IconButton(
+                  tooltip: 'View histogram',
+                  icon: const Icon(
+                    Icons.bar_chart_rounded,
+                    color: Colors.green,
+                  ),
+                  onPressed: () {
+                    if (measurements.isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content:
+                              Text('Add a measurement to see the histogram.'),
+                          duration: Duration(seconds: 2),
+                        ),
+                      );
+                      return;
+                    }
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => BloodPressureHistogramScreen(
+                          measurements: List<BloodPressure>.from(measurements),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+                if (_showTestingActions) ...[
+                  IconButton(
+                    tooltip: 'Generate sample data',
+                    icon: const Icon(
+                      Icons.auto_graph_rounded,
+                      color: Colors.green,
+                    ),
+                    onPressed: _isLoading ? null : _generateSampleData,
+                  ),
+                  IconButton(
+                    tooltip: 'Clear all measurements',
+                    icon: const Icon(
+                      Icons.delete_forever_rounded,
+                      color: Colors.redAccent,
+                    ),
+                    onPressed: _isLoading ? null : _confirmAndClearMeasurements,
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
       ),
       body: _isLoading
           ? Center(
@@ -358,7 +601,7 @@ class _HealthPageState extends State<HealthPage> {
                                         Row(
                                           children: [
                                             Text(
-                                              DateFormat('MMM d, h:mm a')
+                                              DateFormat('MMM d, yyyy, h:mm a')
                                                   .format(
                                                       measurement.timestamp),
                                               style: const TextStyle(

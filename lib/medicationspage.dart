@@ -12,6 +12,8 @@ class MedicationsPage extends StatefulWidget {
 }
 
 class _MedicationsPageState extends State<MedicationsPage> {
+  static const bool _showNotificationTestFab =
+      false; // TODO: Change to false before deploying
   bool isActiveTab = true;
   final MedicationService _medicationService = MedicationService();
   List<Medication> _medications = [];
@@ -546,15 +548,16 @@ class _MedicationsPageState extends State<MedicationsPage> {
       floatingActionButton: Column(
         mainAxisAlignment: MainAxisAlignment.end,
         children: [
-          // Test notification button
-          FloatingActionButton(
-            heroTag: "test_notification",
-            onPressed: _testMedicationNotification,
-            backgroundColor: Colors.orange,
-            child: Icon(Icons.notifications_active, color: Colors.white),
-            mini: true,
-          ),
-          SizedBox(height: 10),
+          if (_showNotificationTestFab) ...[
+            FloatingActionButton(
+              heroTag: "test_notification",
+              onPressed: _testMedicationNotification,
+              backgroundColor: Colors.orange,
+              child: Icon(Icons.notifications_active, color: Colors.white),
+              mini: true,
+            ),
+            SizedBox(height: 10),
+          ],
           // Add medication button
           FloatingActionButton(
             heroTag: "add_medication",
